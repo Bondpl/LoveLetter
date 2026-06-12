@@ -1,0 +1,52 @@
+# Gradle / build
+.gradle/
+**/build/
+
+# Gradle wrapper (keep wrapper files in repo)
+# gradle/wrapper/gradle-wrapper.jar
+# gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio / IntelliJ
+/.idea/
+*.iml
+
+# If you want to share code styles or inspection profiles, un-ignore them:
+# !.idea/codeStyles/
+# !.idea/inspectionProfiles/
+
+# Local configuration (SDK path) - do not commit
+local.properties
+
+# Signing keys
+*.jks
+*.keystore
+
+# Android artifacts
+*.apk
+*.ap_
+*.aab
+
+# NDK / native build
+.externalNativeBuild/
+.cxx/
+obj/
+*.so
+
+# Profiling / captures
+captures/
+*.hprof
+*.trace
+
+# Test / coverage
+test-results/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+*.tmp
+*.bak
+*.orig
