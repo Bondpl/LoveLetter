@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 data class DrawingState(
     val selectedColor: Color = Color.Black,
@@ -38,6 +40,7 @@ sealed interface DrawingAction {
 }
 
 class DrawingViewModel: ViewModel() {
+    private val repository = DrawingRepository(NetworkModule.client)
 
     private val _state = MutableStateFlow(DrawingState())
     val state = _state.asStateFlow()
@@ -90,5 +93,14 @@ class DrawingViewModel: ViewModel() {
             currentPath = null,
             paths = emptyList()
         ) }
+    }
+    fun uploadDrawing(pngByteArray: ByteArray) {
+        viewModelScope.launch {
+            try {
+                repository.sendDrawing(pngByteArray)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 }

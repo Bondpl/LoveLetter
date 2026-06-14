@@ -12,10 +12,14 @@ import androidx.compose.ui.Modifier
 import com.example.loveletter.ui.theme.LoveLetterTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-
+import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +29,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val viewModel = viewModel<DrawingViewModel>()
                     val state by viewModel.state.collectAsStateWithLifecycle()
-
+                    val graphicsLayer = rememberGraphicsLayer()
+                    val scope = rememberCoroutineScope()
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -39,6 +44,12 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .drawWithContent {
+                                    graphicsLayer.record {
+                                        this@drawWithContent.drawContent()
+                                    }
+                                    drawLayer(graphicsLayer)
+                                }
                         )
                         CanvasControls(
                             selectedColor = state.selectedColor,
@@ -48,6 +59,15 @@ class MainActivity : ComponentActivity() {
                             },
                             onClearCanvas = {
                                 viewModel.onAction(DrawingAction.OnClearCanvasClick)
+                            },
+                            onSendAction = {
+                                scope.launch {
+                                    val imageBitmap = graphicsLayer.toImageBitmap()
+                                    val pngByteArray = imageBitmap.toPngByteArray()
+
+                                    // Directly upload the PNG byte array (no debug saving)
+                                    viewModel.uploadDrawing(pngByteArray)
+                            }
                             }
                         )
                     }
