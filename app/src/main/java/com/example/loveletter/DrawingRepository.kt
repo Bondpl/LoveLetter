@@ -9,7 +9,7 @@ class DrawingRepository (private val client: HttpClient){
     private val apiKey = BuildConfig.API_KEY
     suspend fun sendDrawing(drawing: ByteArray){
         client.post(serverUrl){
-            header("API_KEY", apiKey)
+            header("api_key", apiKey)
             contentType(ContentType.Image.PNG)
             setBody(drawing)
         }
