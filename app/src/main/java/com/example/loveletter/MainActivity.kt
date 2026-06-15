@@ -65,7 +65,6 @@ class MainActivity : ComponentActivity() {
                                     val imageBitmap = graphicsLayer.toImageBitmap()
                                     val pngByteArray = imageBitmap.toPngByteArray()
 
-                                    // Directly upload the PNG byte array (no debug saving)
                                     viewModel.uploadDrawing(pngByteArray)
                             }
                             }
