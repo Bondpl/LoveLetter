@@ -30,12 +30,4 @@ class DrawingRepository (private val client: HttpClient){
             null
         }
     }
-
-    suspend fun sendFcmTokenToServer(token: String) {
-        val client = NetworkModule.client
-        client.post("${BuildConfig.SERVER_URL}/api/fcm-token") {
-            contentType(io.ktor.http.ContentType.Application.Json)
-            setBody(mapOf("token" to token))
-        }
-    }
 }

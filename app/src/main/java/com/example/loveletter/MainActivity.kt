@@ -1,4 +1,3 @@
-
 package com.example.loveletter
 
 import android.os.Bundle
@@ -25,6 +24,8 @@ import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import io.ktor.client.request.*
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 
 class MainActivity : ComponentActivity() {
     private lateinit var fcmTokenManager: FCMTokenManager
@@ -33,12 +34,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Inicjalizuj FCM
         fcmTokenManager = FCMTokenManager(this)
         fcmTokenManager.requestNotificationPermission()
         fcmTokenManager.requestFCMToken(
             onSuccess = { token ->
                 sendFcmTokenToServer(token)
+                Log.d("FCM", "FCM token obtained and sent to server: $token")
             },
             onError = { error ->
                 Log.e("FCM", "Error getting FCM token", error)
@@ -86,7 +87,12 @@ class MainActivity : ComponentActivity() {
                                     val imageBitmap = graphicsLayer.toImageBitmap()
                                     val pngByteArray = imageBitmap.toPngByteArray()
 
-                                    viewModel.uploadDrawing(pngByteArray)
+                                    try {
+                                        viewModel.uploadDrawing(pngByteArray)
+                                        Log.d("Upload",  "Image uploaded successfully! Size: ${pngByteArray.size} bytes")
+                                    } catch (e: Exception) {
+                                        Log.e("Upload", "Image upload failed!", e)
+                                    }
                                 }
                             }
                         )
@@ -103,6 +109,7 @@ class MainActivity : ComponentActivity() {
             try {
                 client.post(url) {
                     header("api_key", BuildConfig.API_KEY)
+                    contentType(ContentType.Application.Json)
                     setBody(mapOf("token" to token))
                 }
                 Log.d("FCM", "FCM token sent to server from MainActivity")
