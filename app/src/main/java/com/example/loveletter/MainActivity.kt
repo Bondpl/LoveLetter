@@ -1,3 +1,4 @@
+
 package com.example.loveletter
 
 import android.os.Bundle
@@ -20,10 +21,30 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import android.util.Log
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import io.ktor.client.request.*
+
 class MainActivity : ComponentActivity() {
+    private lateinit var fcmTokenManager: FCMTokenManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Inicjalizuj FCM
+        fcmTokenManager = FCMTokenManager(this)
+        fcmTokenManager.requestNotificationPermission()
+        fcmTokenManager.requestFCMToken(
+            onSuccess = { token ->
+                sendFcmTokenToServer(token)
+            },
+            onError = { error ->
+                Log.e("FCM", "Error getting FCM token", error)
+            }
+        )
+
         setContent {
             LoveLetterTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -66,11 +87,27 @@ class MainActivity : ComponentActivity() {
                                     val pngByteArray = imageBitmap.toPngByteArray()
 
                                     viewModel.uploadDrawing(pngByteArray)
-                            }
+                                }
                             }
                         )
                     }
                 }
+            }
+        }
+    }
+
+    private fun sendFcmTokenToServer(token: String) {
+        val client = NetworkModule.client
+        val url = "${BuildConfig.SERVER_URL}/api/fcm-token"
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                client.post(url) {
+                    header("api_key", BuildConfig.API_KEY)
+                    setBody(mapOf("token" to token))
+                }
+                Log.d("FCM", "FCM token sent to server from MainActivity")
+            } catch (e: Exception) {
+                Log.e("FCM", "Failed to send FCM token from MainActivity", e)
             }
         }
     }

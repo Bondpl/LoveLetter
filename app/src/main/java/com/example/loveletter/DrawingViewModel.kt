@@ -45,6 +45,10 @@ class DrawingViewModel: ViewModel() {
     private val _state = MutableStateFlow(DrawingState())
     val state = _state.asStateFlow()
 
+    private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
+
+    val downloadedImage = _downloadedImage.asStateFlow()
+
     fun onAction(action: DrawingAction) {
         when(action) {
             DrawingAction.OnClearCanvasClick -> onClearCanvasClick()
@@ -100,6 +104,15 @@ class DrawingViewModel: ViewModel() {
                 repository.sendDrawing(pngByteArray)
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    fun fetchLatestDrawing() {
+        viewModelScope.launch {
+            val bytes = repository.getLatestDrawing()
+            if (bytes != null) {
+                _downloadedImage.value = bytes
             }
         }
     }

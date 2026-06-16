@@ -48,6 +48,7 @@ android {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -71,4 +72,5 @@ dependencies {
     implementation(libs.io.ktor.ktor.client.logging)
     implementation(libs.okhttp)
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
+    implementation(libs.firebase.messaging)
 }
