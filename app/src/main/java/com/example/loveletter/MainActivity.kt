@@ -21,6 +21,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import io.ktor.client.request.*
@@ -53,6 +55,18 @@ class MainActivity : ComponentActivity() {
                     val state by viewModel.state.collectAsStateWithLifecycle()
                     val graphicsLayer = rememberGraphicsLayer()
                     val scope = rememberCoroutineScope()
+                    val downloadedImage by viewModel.downloadedImage.collectAsStateWithLifecycle()
+                    val context = LocalContext.current
+
+                    LaunchedEffect(Unit) {
+                        viewModel.fetchLatestDrawing()
+                    }
+                    LaunchedEffect(downloadedImage) {
+                        downloadedImage?.let { bytes ->
+                            LoveLetterWidget.updateWidgetImage(context, bytes)
+                        }
+                    }
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
