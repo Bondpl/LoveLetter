@@ -47,3 +47,4 @@ Because the app is strictly for two users, it avoids complex login screens. It r
 ## ⚙️ Local Setup
 
 Since this is a private application, API keys and server URLs are not included in the repository for security reasons.
+Also, have to provide google-services.json file for Firebase Cloud Messaging to work.
