@@ -55,24 +55,9 @@ fun ColumnScope.CanvasControls(
     ) {
         for (color in colors) {
             if (color == Color(0xFF123456)) {
-                var showTools by remember { mutableStateOf(false) }
-                IconButton(onClick = { showTools = true }) {
-                    Icon(painter = painterResource(id = R.drawable.outline_arrow_circle_up_24), contentDescription = "More tools", modifier = Modifier.size(40.dp))
+                IconButton(onClick = { onFill(selectedColor) }) {
+                    Icon(painter = painterResource(id = R.drawable.outline_arrow_circle_up_24), contentDescription = "Fill", modifier = Modifier.size(40.dp))
                 }
-                if (showTools) {
-                    AlertDialog(onDismissRequest = { showTools = false }, title = { Text("Tools") }, text = {
-                        Column {
-                            Button(onClick = {
-                                onFill(selectedColor)
-                                showTools = false
-                            }) { Text("Fill in") }
-                            Spacer(modifier = Modifier.size(6.dp))
-                            Button(onClick = {
-                                onSelectColor(Color(0xFFFAFAFA))
-                                showTools = false
-                            }) { Text("Eraser") }
-                        }
-                    }, confirmButton = {}, dismissButton = {})
             } else {
                 Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(color).clickable { onSelectColor(color) })
             }
@@ -95,3 +80,4 @@ fun ColumnScope.CanvasControls(
         Button(onClick = onUndo) { Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Undo") }
     }
 }
+
