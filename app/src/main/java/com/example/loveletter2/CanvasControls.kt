@@ -1,11 +1,11 @@
 ﻿package com.example.loveletter2
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 
 @Composable
 fun ColumnScope.CanvasControls(
@@ -45,8 +44,8 @@ fun ColumnScope.CanvasControls(
     brushThickness: Float = 20f,
     modifier: Modifier = Modifier
 ) {
-    // Carousel of colors
     val scrollState = rememberScrollState()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -54,7 +53,7 @@ fun ColumnScope.CanvasControls(
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
     ) {
-        colors.fastForEach { color ->
+        for (color in colors) {
             if (color == Color(0xFF123456)) {
                 var showTools by remember { mutableStateOf(false) }
                 IconButton(onClick = { showTools = true }) {
@@ -62,72 +61,37 @@ fun ColumnScope.CanvasControls(
                 }
                 if (showTools) {
                     AlertDialog(onDismissRequest = { showTools = false }, title = { Text("Tools") }, text = {
-                        Button(onClick = {
-                            onFill(selectedColor)
-                            showTools = false
-                        }) { Text("Fill in") }
-                        Spacer(modifier = Modifier.size(6.dp))
-                        Button(onClick = {
-                            onSelectColor(Color(0xFFFAFAFA))
-                            showTools = false
-                        }) { Text("Eraser") }
+                        Column {
+                            Button(onClick = {
+                                onFill(selectedColor)
+                                showTools = false
+                            }) { Text("Fill in") }
+                            Spacer(modifier = Modifier.size(6.dp))
+                            Button(onClick = {
+                                onSelectColor(Color(0xFFFAFAFA))
+                                showTools = false
+                            }) { Text("Eraser") }
+                        }
                     }, confirmButton = {}, dismissButton = {})
             } else {
-                val isSelected = selectedColor == color
-                Box(modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .clickable { onSelectColor(color) }
-                ) {
-                    if (isSelected) {
-                        // small border indicator
-                        Box(modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(44.dp))
-                    }
-                }
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(color).clickable { onSelectColor(color) })
             }
         }
     }
 
-    // Bottom controls: brush sizes left of Clear Canvas, then Send and Undo
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center) {
-
-        // Brush size buttons: 1..4 mapped to thickness
-        val levels = listOf(1,2,3,4)
-        val currentLevel = when {
-            brushThickness <= 10f -> 1
-            brushThickness <= 30f -> 2
-            brushThickness <= 60f -> 3
-            else -> 4
-        }
-        levels.forEach { lvl ->
-            IconButton(onClick = { onSetBrushLevel(lvl) }) {
-                Icon(painter = painterResource(id = when(lvl) {
-                    1 -> R.drawable.outline_pen_size_1_24
-                    2 -> R.drawable.outline_pen_size_2_24
-                    3 -> R.drawable.outline_pen_size_3_24
-                    else -> R.drawable.outline_pen_size_4_24
-                }), contentDescription = "Size $lvl")
-            }
-        }
+    // Bottom controls
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.Center) {
+        IconButton(onClick = { onSetBrushLevel(1) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_1_24), contentDescription = "Size 1") }
+        IconButton(onClick = { onSetBrushLevel(2) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_2_24), contentDescription = "Size 2") }
+        IconButton(onClick = { onSetBrushLevel(3) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_3_24), contentDescription = "Size 3") }
+        IconButton(onClick = { onSetBrushLevel(4) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_4_24), contentDescription = "Size 4") }
 
         Spacer(modifier = Modifier.size(8.dp))
 
         Button(onClick = onClearCanvas) { Text("Clear Canvas") }
-
         Spacer(modifier = Modifier.size(8.dp))
-
         Button(onClick = onSendAction) { Text("Send") }
-
         Spacer(modifier = Modifier.size(8.dp))
-
-        Button(onClick = onUndo) {
-            Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Undo")
-        }
+        Button(onClick = onUndo) { Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Undo") }
     }
 }
