@@ -1,4 +1,4 @@
-package com.example.loveletter2
+﻿package com.example.loveletter2
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

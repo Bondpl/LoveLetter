@@ -3,21 +3,21 @@
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -37,174 +36,93 @@ import androidx.compose.ui.util.fastForEach
 fun ColumnScope.CanvasControls(
     selectedColor: Color,
     colors: List<Color>,
-    colorSubMap: Map<Color, List<Color>> = emptyMap(),
     onSelectColor: (Color) -> Unit,
     onClearCanvas: () -> Unit,
     onSendAction: () -> Unit = {},
     onUndo: () -> Unit = {},
     onFill: (Color) -> Unit = {},
-    onAddCircle: () -> Unit = {},
-    onBrushSizeChanged: (Float) -> Unit = {},
+    onSetBrushLevel: (Int) -> Unit = {},
+    brushThickness: Float = 20f,
     modifier: Modifier = Modifier
 ) {
-    // Top: brush size chooser
-    var showSizeDialog by remember { mutableStateOf(false) }
-    var tempSize by remember { mutableStateOf(20f) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.End
-    ) {
-        IconButton(onClick = { showSizeDialog = true }) {
-            Icon(
-                painter = painterResource(id = R.drawable.outline_format_paint_24),
-                contentDescription = "Brush size"
-            )
-        }
-    }
-
-    if (showSizeDialog) {
-        AlertDialog(
-            onDismissRequest = { showSizeDialog = false },
-            confirmButton = {},
-            dismissButton = {},
-            title = { Text("Brush size") },
-            text = {
-                Slider(
-                    value = tempSize,
-                    onValueChange = { tempSize = it },
-                    valueRange = 1f..100f,
-                    onValueChangeFinished = {
-                        onBrushSizeChanged(tempSize)
-                        showSizeDialog = false
-                    }
-                )
-            }
-        )
-    }
-
-    // Expanded subcolors row (appears above base colors)
-    var expandedColor by remember { mutableStateOf<Color?>(null) }
-    expandedColor?.let { base ->
-        val subs = colorSubMap[base] ?: emptyList()
-        if (subs.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
-            ) {
-                subs.fastForEach { color ->
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .border(
-                                width = 2.dp,
-                                color = if (selectedColor == color) Color.Black else Color.Transparent,
-                                shape = CircleShape
-                            )
-                            .clickable {
-                                onSelectColor(color)
-                                expandedColor = null
-                            }
-                    )
-                }
-            }
-        }
-    }
-
-    // Base colors row
+    // Carousel of colors
+    val scrollState = rememberScrollState()
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .horizontalScroll(scrollState)
             .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
     ) {
-        val specialIconColor = Color(0xFF123456) // sentinel for the "more tools" icon
         colors.fastForEach { color ->
-            val isSelected = selectedColor == color
-            if (color == specialIconColor) {
-                // special icon that opens tools dialog
+            if (color == Color(0xFF123456)) {
                 var showTools by remember { mutableStateOf(false) }
                 IconButton(onClick = { showTools = true }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.outline_arrow_circle_up_24),
-                        contentDescription = "More tools",
-                        modifier = Modifier.size(40.dp)
-                    )
+                    Icon(painter = painterResource(id = R.drawable.outline_arrow_circle_up_24), contentDescription = "More tools", modifier = Modifier.size(40.dp))
                 }
                 if (showTools) {
-                    AlertDialog(
-                        onDismissRequest = { showTools = false },
-                        title = { Text("Tools") },
-                        text = {
-                            Column {
-                                Button(onClick = {
-                                    // Fill with currently selected color
-                                    onFill(selectedColor)
-                                    showTools = false
-                                }) { Text("Fill in") }
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Button(onClick = {
-                                    onSelectColor(Color.White) // Eraser -> white
-                                    showTools = false
-                                }) { Text("Eraser") }
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Button(onClick = {
-                                    onAddCircle()
-                                    showTools = false
-                                }) { Text("Add circle") }
-                            }
-                        },
-                        confirmButton = {},
-                        dismissButton = {}
-                    )
-                }
+                    AlertDialog(onDismissRequest = { showTools = false }, title = { Text("Tools") }, text = {
+                        Button(onClick = {
+                            onFill(selectedColor)
+                            showTools = false
+                        }) { Text("Fill in") }
+                        Spacer(modifier = Modifier.size(6.dp))
+                        Button(onClick = {
+                            onSelectColor(Color(0xFFFAFAFA))
+                            showTools = false
+                        }) { Text("Eraser") }
+                    }, confirmButton = {}, dismissButton = {})
             } else {
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            val scale = if (isSelected) 1.2f else 1f
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                        .border(
-                            width = 2.dp,
-                            color = if (selectedColor == color) Color.Black else Color.Transparent,
-                            shape = CircleShape
-                        )
-                        .clickable {
-                            onSelectColor(color)
-                            // toggle expansion for subcolors
-                            expandedColor = if (expandedColor == color) null else color
-                        }
-                )
+                val isSelected = selectedColor == color
+                Box(modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .clickable { onSelectColor(color) }
+                ) {
+                    if (isSelected) {
+                        // small border indicator
+                        Box(modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(44.dp))
+                    }
+                }
             }
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Button(onClick = onClearCanvas) {
-            Text("Clear Canvas")
+    // Bottom controls: brush sizes left of Clear Canvas, then Send and Undo
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center) {
+
+        // Brush size buttons: 1..4 mapped to thickness
+        val levels = listOf(1,2,3,4)
+        val currentLevel = when {
+            brushThickness <= 10f -> 1
+            brushThickness <= 30f -> 2
+            brushThickness <= 60f -> 3
+            else -> 4
+        }
+        levels.forEach { lvl ->
+            IconButton(onClick = { onSetBrushLevel(lvl) }) {
+                Icon(painter = painterResource(id = when(lvl) {
+                    1 -> R.drawable.outline_pen_size_1_24
+                    2 -> R.drawable.outline_pen_size_2_24
+                    3 -> R.drawable.outline_pen_size_3_24
+                    else -> R.drawable.outline_pen_size_4_24
+                }), contentDescription = "Size $lvl")
+            }
         }
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = onSendAction) {
-            Text("Send")
-        }
+        Button(onClick = onClearCanvas) { Text("Clear Canvas") }
+
+        Spacer(modifier = Modifier.size(8.dp))
+
+        Button(onClick = onSendAction) { Text("Send") }
 
         Spacer(modifier = Modifier.size(8.dp))
 
