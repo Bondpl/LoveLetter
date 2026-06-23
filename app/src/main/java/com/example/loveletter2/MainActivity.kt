@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter2
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.loveletter.ui.theme.LoveLetterTheme
+import com.example.loveletter2.ui.theme.LoveLetterTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,23 +30,23 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 class MainActivity : ComponentActivity() {
-    private lateinit var fcmTokenManager: FCMTokenManager
+    //private lateinit var fcmTokenManager: FCMTokenManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        fcmTokenManager = FCMTokenManager(this)
-        fcmTokenManager.requestNotificationPermission()
-        fcmTokenManager.requestFCMToken(
-            onSuccess = { token ->
-                sendFcmTokenToServer(token)
-                Log.d("FCM", "FCM token obtained and sent to server: $token")
-            },
-            onError = { error ->
-                Log.e("FCM", "Error getting FCM token", error)
-            }
-        )
+//        fcmTokenManager = FCMTokenManager(this)
+//        fcmTokenManager.requestNotificationPermission()
+//        fcmTokenManager.requestFCMToken(
+//            onSuccess = { token ->
+//                sendFcmTokenToServer(token)
+//                Log.d("FCM", "FCM token obtained and sent to server: $token")
+//            },
+//            onError = { error ->
+//                Log.e("FCM", "Error getting FCM token", error)
+//            }
+//        )
 
         setContent {
             LoveLetterTheme {

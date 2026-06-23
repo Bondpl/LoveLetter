@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter2
 
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap

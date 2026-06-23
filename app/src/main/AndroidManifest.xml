@@ -28,7 +28,7 @@
         </activity>
 
         <receiver
-            android:name="com.example.loveletter.LoveLetterWidget"
+            android:name="com.example.loveletter2.LoveLetterWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

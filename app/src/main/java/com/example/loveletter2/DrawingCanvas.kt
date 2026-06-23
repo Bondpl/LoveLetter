@@ -1,4 +1,4 @@
-package com.example.loveletter
+﻿package com.example.loveletter2
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,6 +28,7 @@ fun DrawingCanvas(
     paths: List<PathData>,
     currentPath: PathData?,
     onAction: (DrawingAction) -> Unit,
+    backgroundColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
         val configuration = LocalConfiguration.current
@@ -39,7 +40,7 @@ fun DrawingCanvas(
                 .fillMaxWidth()
                 .height(optimalCanvasHeight)
                 .clipToBounds()
-                .background(Color.White)
+                .background(backgroundColor)
                 .border(2.dp, Color.LightGray, RoundedCornerShape(16.dp)) // Lekko zaokrąglona ramka jak w widgecie
                 .clip(RoundedCornerShape(16.dp))
                 .pointerInput(true) {
@@ -55,12 +56,14 @@ fun DrawingCanvas(
             drawPath(
                 path = pathData.path,
                 color = pathData.color,
+                thickness = pathData.thickness
             )
         }
         currentPath?.let {
             drawPath(
                 path = it.path,
-                color = it.color
+                color = it.color,
+                thickness = it.thickness
             )
         }
     }

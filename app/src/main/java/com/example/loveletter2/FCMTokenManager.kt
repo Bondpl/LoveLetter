@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter2
 
 import android.app.Activity
 import android.content.Context

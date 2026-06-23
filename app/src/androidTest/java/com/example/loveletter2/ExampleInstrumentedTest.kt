@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter2
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

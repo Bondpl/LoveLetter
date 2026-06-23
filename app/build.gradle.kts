@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.loveletter"
+    namespace = "com.example.loveletter2"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -13,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.loveletter"
+        applicationId = "com.example.loveletter2"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
