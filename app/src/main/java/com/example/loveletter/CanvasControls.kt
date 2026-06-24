@@ -1,4 +1,4 @@
-﻿package com.example.loveletter2
+﻿package com.example.loveletter
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

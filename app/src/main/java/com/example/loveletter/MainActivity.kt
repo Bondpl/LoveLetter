@@ -1,4 +1,4 @@
-﻿package com.example.loveletter2
+﻿package com.example.loveletter
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.loveletter2.ui.theme.LoveLetterTheme
+import com.example.loveletter.ui.theme.LoveLetterTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope

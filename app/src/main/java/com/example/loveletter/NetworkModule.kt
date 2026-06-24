@@ -1,4 +1,4 @@
-package com.example.loveletter2
+package com.example.loveletter
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*

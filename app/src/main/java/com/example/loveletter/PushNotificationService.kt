@@ -1,4 +1,4 @@
-package com.example.loveletter2
+package com.example.loveletter
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.loveletter2"
+    namespace = "com.example.loveletter"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1

@@ -1,4 +1,4 @@
-﻿package com.example.loveletter2
+﻿package com.example.loveletter
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
