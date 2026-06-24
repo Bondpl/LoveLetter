@@ -9,10 +9,8 @@ import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-// Brush types
 enum class BrushType { DASHED, CONTINUOUS, MARKER, HIGHLIGHTER }
 
-// Flattened palette with requested ordering: 1st red, 2 sky blue, 3 purple, 4 green, 5 banana, 6 orange, 7 brown, then the rest
 val flattenedColors = listOf(
     Color(0xFFFF0000), // red
     Color(0xFF2B98E0), // sky
@@ -21,7 +19,6 @@ val flattenedColors = listOf(
     Color(0xFFFAEA34), // banana
     Color(0xFFEB9E1E), // orange
     Color(0xFF5C3705), // brown
-    // remaining colors in prior order (excluding duplicates above)
     Color(0xFF000000), // black
     Color(0xFFB0B0B0), // grey
     Color(0xFFFAFAFA), // white

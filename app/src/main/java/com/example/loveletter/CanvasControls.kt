@@ -66,7 +66,6 @@ fun ColumnScope.CanvasControls(
         }
     }
 
-    // Second row: brush sizes + Clear Canvas
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -83,7 +82,6 @@ fun ColumnScope.CanvasControls(
         Button(onClick = onClearCanvas) { Text("Clear Canvas") }
     }
 
-    // Third row: Send, Reverse, Options
     var showOptions by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
