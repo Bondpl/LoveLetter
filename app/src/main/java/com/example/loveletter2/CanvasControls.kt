@@ -64,8 +64,13 @@ fun ColumnScope.CanvasControls(
         }
     }
 
-    // Bottom controls
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.Center) {
+    // Second row: brush sizes + Clear Canvas
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
         IconButton(onClick = { onSetBrushLevel(1) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_1_24), contentDescription = "Size 1") }
         IconButton(onClick = { onSetBrushLevel(2) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_2_24), contentDescription = "Size 2") }
         IconButton(onClick = { onSetBrushLevel(3) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_3_24), contentDescription = "Size 3") }
@@ -74,10 +79,41 @@ fun ColumnScope.CanvasControls(
         Spacer(modifier = Modifier.size(8.dp))
 
         Button(onClick = onClearCanvas) { Text("Clear Canvas") }
-        Spacer(modifier = Modifier.size(8.dp))
+    }
+
+    // Third row: Send, Reverse, Options
+    var showOptions by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
         Button(onClick = onSendAction) { Text("Send") }
+
         Spacer(modifier = Modifier.size(8.dp))
-        Button(onClick = onUndo) { Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Undo") }
+
+        Button(onClick = onUndo) { Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Reverse") }
+
+        Spacer(modifier = Modifier.size(8.dp))
+
+        Button(onClick = { showOptions = true }) { Text("Options") }
+    }
+
+    if (showOptions) {
+        AlertDialog(
+            onDismissRequest = { showOptions = false },
+            title = { Text("Options") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Button(onClick = { onFill(selectedColor); showOptions = false }) { Text("Fill in") }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Button(onClick = { onSelectColor(Color(0xFFFAFAFA)); showOptions = false }) { Text("Eraser") }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
     }
 }
 
