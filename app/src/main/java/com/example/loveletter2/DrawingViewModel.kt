@@ -9,44 +9,49 @@ import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
-data class DrawingState(
-    val selectedColor: Color = Color(0xFF000000),
-    val currentPath: PathData? = null,
-    val paths: List<PathData> = emptyList(),
-    val backgroundColor: Color = Color.White,
-    val brushThickness: Float = 20f
-)
+// Brush types
+enum class BrushType { DASHED, CONTINUOUS, MARKER, HIGHLIGHTER }
 
-val SENTINEL_ICON_COLOR = Color(0xFF123456)
-
+// Flattened palette with requested ordering: 1st red, 2 sky blue, 3 purple, 4 green, 5 banana, 6 orange, 7 brown, then the rest
 val flattenedColors = listOf(
-    Color(0xFF000000), // black
-    Color(0xFFB0B0B0), // grey
-    Color(0xFFFAFAFA), // white
     Color(0xFFFF0000), // red
-    Color(0xFFEB5050), // cherry
-    Color(0xFFF765B8), // pink
-    Color(0xFF0000FF), // blue
     Color(0xFF2B98E0), // sky
-    Color(0xFF84C0E8), // opalite
-    Color(0xFF15268F), // navy
     Color(0xFF5638B5), // purple
     Color(0xFF00AA00), // green
-    Color(0xFF4FAB61), // grass
-    Color(0xFF1F660F), // forest
-    Color(0xFFFFFF00), // yellow
     Color(0xFFFAEA34), // banana
     Color(0xFFEB9E1E), // orange
     Color(0xFF5C3705), // brown
+    // remaining colors in prior order (excluding duplicates above)
+    Color(0xFF000000), // black
+    Color(0xFFB0B0B0), // grey
+    Color(0xFFFAFAFA), // white
+    Color(0xFFEB5050), // cherry
+    Color(0xFFF765B8), // pink
+    Color(0xFF0000FF), // blue
+    Color(0xFF84C0E8), // opalite
+    Color(0xFF15268F), // navy
+    Color(0xFF4FAB61), // grass
+    Color(0xFF1F660F), // forest
+    Color(0xFFFFFF00), // yellow
     Color(0xFFFF00FF), // magenta
-    SENTINEL_ICON_COLOR
+    Color(0xFF123456)  // sentinel -> tools icon
 )
 
 data class PathData(
     val id: String,
     val color: Color,
     val path: List<Offset>,
-    val thickness: Float = 20f
+    val thickness: Float = 20f,
+    val brushType: BrushType = BrushType.MARKER
+)
+
+data class DrawingState(
+    val selectedColor: Color = Color(0xFF000000),
+    val currentPath: PathData? = null,
+    val paths: List<PathData> = emptyList(),
+    val backgroundColor: Color = Color.White,
+    val brushThickness: Float = 20f,
+    val brushType: BrushType = BrushType.MARKER
 )
 
 sealed interface DrawingAction {
@@ -58,6 +63,7 @@ sealed interface DrawingAction {
     data object OnUndo: DrawingAction
     data class OnFill(val color: Color): DrawingAction
     data class OnSetBrushSize(val size: Float): DrawingAction
+    data class OnSetBrushType(val type: BrushType): DrawingAction
 }
 
 class DrawingViewModel: ViewModel() {
@@ -95,6 +101,7 @@ class DrawingViewModel: ViewModel() {
                 onFill(action.color)
             }
             is DrawingAction.OnSetBrushSize -> onSetBrushSize(action.size)
+            is DrawingAction.OnSetBrushType -> onSetBrushType(action.type)
         }
     }
 
@@ -104,6 +111,10 @@ class DrawingViewModel: ViewModel() {
 
     private fun onSetBrushSize(size: Float) {
         _state.update { it.copy(brushThickness = size) }
+    }
+
+    private fun onSetBrushType(type: BrushType) {
+        _state.update { it.copy(brushType = type) }
     }
 
     private fun onFill(color: Color) {
@@ -123,7 +134,7 @@ class DrawingViewModel: ViewModel() {
     }
 
     private fun onNewPathStart() {
-        _state.update { it.copy(currentPath = PathData(id = System.currentTimeMillis().toString(), color = it.selectedColor, path = emptyList(), thickness = it.brushThickness)) }
+        _state.update { it.copy(currentPath = PathData(id = System.currentTimeMillis().toString(), color = it.selectedColor, path = emptyList(), thickness = it.brushThickness, brushType = it.brushType)) }
     }
 
     private fun onDraw(offset: Offset) {

@@ -20,13 +20,8 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.Dispatchers
-import io.ktor.client.request.*
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +75,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onUndo = { viewModel.onAction(DrawingAction.OnUndo) },
                             onFill = { viewModel.onAction(DrawingAction.OnFill(it)) },
+                            onSetBrushType = { viewModel.onAction(DrawingAction.OnSetBrushType(it)) },
                             onSetBrushLevel = { level ->
                                 val size = when(level) { 1 -> 6f; 2 -> 20f; 3 -> 40f; else -> 80f }
                                 viewModel.onAction(DrawingAction.OnSetBrushSize(size))

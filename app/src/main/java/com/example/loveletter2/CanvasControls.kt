@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,9 +41,10 @@ fun ColumnScope.CanvasControls(
     onSendAction: () -> Unit = {},
     onUndo: () -> Unit = {},
     onFill: (Color) -> Unit = {},
+    onSetBrushType: (BrushType) -> Unit = {},
     onSetBrushLevel: (Int) -> Unit = {},
-    brushThickness: Float = 20f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    brushThickness: Float
 ) {
     val scrollState = rememberScrollState()
 
@@ -89,7 +91,7 @@ fun ColumnScope.CanvasControls(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        Button(onClick = onSendAction) { Text("Send") }
+        Button(onClick = onSendAction, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4DA6FF))) { Text("Send") }
 
         Spacer(modifier = Modifier.size(8.dp))
 
@@ -97,18 +99,20 @@ fun ColumnScope.CanvasControls(
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = { showOptions = true }) { Text("Options") }
+        Button(onClick = { showOptions = true }) { Text("Pen") }
     }
 
     if (showOptions) {
         AlertDialog(
             onDismissRequest = { showOptions = false },
-            title = { Text("Options") },
+            title = { Text("Pen Options") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Button(onClick = { onFill(selectedColor); showOptions = false }) { Text("Fill in") }
+                    Button(onClick = { onSetBrushType(BrushType.DASHED); showOptions = false }) { Text("Dashed") }
                     Spacer(modifier = Modifier.size(8.dp))
-                    Button(onClick = { onSelectColor(Color(0xFFFAFAFA)); showOptions = false }) { Text("Eraser") }
+                    Button(onClick = { onSetBrushType(BrushType.CONTINUOUS); showOptions = false }) { Text("Continuous") }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Button(onClick = { onSetBrushType(BrushType.HIGHLIGHTER); showOptions = false }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF69B4))) { Text("Highlighter") }
                 }
             },
             confirmButton = {},
