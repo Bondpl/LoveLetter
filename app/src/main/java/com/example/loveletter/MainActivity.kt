@@ -1,6 +1,7 @@
-package com.example.loveletter
+﻿package com.example.loveletter
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,10 +21,10 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import io.ktor.client.request.post
 import kotlinx.coroutines.Dispatchers
 import io.ktor.client.request.*
 import io.ktor.http.ContentType
@@ -31,7 +32,6 @@ import io.ktor.http.contentType
 
 class MainActivity : ComponentActivity() {
     private lateinit var fcmTokenManager: FCMTokenManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -58,14 +58,8 @@ class MainActivity : ComponentActivity() {
                     val downloadedImage by viewModel.downloadedImage.collectAsStateWithLifecycle()
                     val context = LocalContext.current
 
-                    LaunchedEffect(Unit) {
-                        viewModel.fetchLatestDrawing()
-                    }
-                    LaunchedEffect(downloadedImage) {
-                        downloadedImage?.let { bytes ->
-                            LoveLetterWidget.updateWidgetImage(context, bytes)
-                        }
-                    }
+                    LaunchedEffect(Unit) { viewModel.fetchLatestDrawing() }
+                    LaunchedEffect(downloadedImage) { downloadedImage?.let { bytes -> LoveLetterWidget.updateWidgetImage(context, bytes) } }
 
                     Column(
                         modifier = Modifier
@@ -77,38 +71,37 @@ class MainActivity : ComponentActivity() {
                             paths = state.paths,
                             currentPath = state.currentPath,
                             onAction = viewModel::onAction,
+                            backgroundColor = state.backgroundColor,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .drawWithContent {
-                                    graphicsLayer.record {
-                                        this@drawWithContent.drawContent()
-                                    }
+                                    graphicsLayer.record { this@drawWithContent.drawContent() }
                                     drawLayer(graphicsLayer)
                                 }
                         )
+
                         CanvasControls(
                             selectedColor = state.selectedColor,
-                            colors = allColors,
-                            onSelectColor = {
-                                viewModel.onAction(DrawingAction.OnSelectColor(it))
-                            },
-                            onClearCanvas = {
-                                viewModel.onAction(DrawingAction.OnClearCanvasClick)
-                            },
+                            colors = flattenedColors,
+                            onSelectColor = { viewModel.onAction(DrawingAction.OnSelectColor(it)) },
+                            onClearCanvas = { viewModel.onAction(DrawingAction.OnClearCanvasClick) },
                             onSendAction = {
                                 scope.launch {
                                     val imageBitmap = graphicsLayer.toImageBitmap()
                                     val pngByteArray = imageBitmap.toPngByteArray()
-
-                                    try {
-                                        viewModel.uploadDrawing(pngByteArray)
-                                        Log.d("Upload",  "Image uploaded successfully! Size: ${pngByteArray.size} bytes")
-                                    } catch (e: Exception) {
-                                        Log.e("Upload", "Image upload failed!", e)
-                                    }
+                                    try { viewModel.uploadDrawing(pngByteArray) } catch (e: Exception) { e.printStackTrace() }
                                 }
-                            }
+                            },
+                            onUndo = { viewModel.onAction(DrawingAction.OnUndo) },
+                            onFill = { viewModel.onAction(DrawingAction.OnFill(it)) },
+                            onSetBrushType = { viewModel.onAction(DrawingAction.OnSetBrushType(it)) },
+                            onSetBrushLevel = { level ->
+                                val size = when(level) { 1 -> 6f; 2 -> 20f; 3 -> 40f; else -> 80f }
+                                viewModel.onAction(DrawingAction.OnSetBrushSize(size))
+                            },
+                            brushThickness = state.brushThickness,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

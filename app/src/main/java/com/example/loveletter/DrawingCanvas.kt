@@ -1,4 +1,4 @@
-package com.example.loveletter
+﻿package com.example.loveletter
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,9 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -28,65 +28,65 @@ fun DrawingCanvas(
     paths: List<PathData>,
     currentPath: PathData?,
     onAction: (DrawingAction) -> Unit,
+    backgroundColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
-        val configuration = LocalConfiguration.current
-        val screenWidth = configuration.screenWidthDp.dp
-        val optimalCanvasHeight = screenWidth * 0.85f
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val optimalCanvasHeight = screenWidth * 0.85f
 
-        Canvas(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(optimalCanvasHeight)
-                .clipToBounds()
-                .background(Color.White)
-                .border(2.dp, Color.LightGray, RoundedCornerShape(16.dp)) // Lekko zaokrąglona ramka jak w widgecie
-                .clip(RoundedCornerShape(16.dp))
-                .pointerInput(true) {
-                    detectDragGestures(
-                        onDragStart = { onAction(DrawingAction.OnNewPathStart) },
-                        onDragEnd = { onAction(DrawingAction.OnPathEnd) },
-                        onDrag = { change, _ -> onAction(DrawingAction.OnDraw(change.position)) },
-                        onDragCancel = { onAction(DrawingAction.OnPathEnd) },
-                    )
-                }
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(optimalCanvasHeight)
+            .clipToBounds()
+            .background(backgroundColor)
+            .border(2.dp, Color.LightGray, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .pointerInput(true) {
+                detectDragGestures(
+                    onDragStart = { onAction(DrawingAction.OnNewPathStart) },
+                    onDragEnd = { onAction(DrawingAction.OnPathEnd) },
+                    onDrag = { change, _ -> onAction(DrawingAction.OnDraw(change.position)) },
+                    onDragCancel = { onAction(DrawingAction.OnPathEnd) }
+                )
+            }
     ) {
         paths.fastForEach { pathData ->
-            drawPath(
-                path = pathData.path,
-                color = pathData.color,
-            )
+            drawPathWithType(pathData)
         }
         currentPath?.let {
-            drawPath(
-                path = it.path,
-                color = it.color
-            )
+            drawPathWithType(it)
         }
     }
 }
 
-private fun DrawScope.drawPath(
-    path: List<Offset>,
-    color: Color,
-    thickness: Float = 20f
-) {
+private fun DrawScope.drawPathWithType(pathData: PathData) {
     val simplePath = Path().apply {
-        if (path.isNotEmpty()) {
-            moveTo(path.first().x, path.first().y)
-            for (i in 1..path.lastIndex) {
-                val to = path[i]
+        if (pathData.path.isNotEmpty()) {
+            moveTo(pathData.path.first().x, pathData.path.first().y)
+            for (i in 1..pathData.path.lastIndex) {
+                val to = pathData.path[i]
                 lineTo(to.x, to.y)
             }
         }
     }
+
+    val isHighlighter = pathData.brushType == BrushType.HIGHLIGHTER
+    val isDashed = pathData.brushType == BrushType.DASHED
+    
+    val strokeWidth = if (isHighlighter) pathData.thickness * 1.5f else pathData.thickness
+    val color = if (isHighlighter) pathData.color.copy(alpha = 0.35f) else pathData.color
+    val pathEffect = if (isDashed) PathEffect.dashPathEffect(floatArrayOf(60f, 60f), 0f) else null
+
     drawPath(
         path = simplePath,
         color = color,
         style = Stroke(
-            width = thickness,
+            width = strokeWidth,
             cap = StrokeCap.Round,
-            join = StrokeJoin.Round
+            join = StrokeJoin.Round,
+            pathEffect = pathEffect
         )
     )
 }
