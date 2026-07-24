@@ -155,4 +155,8 @@ class DrawingViewModel: ViewModel() {
             if (bytes != null) _downloadedImage.value = bytes
         }
     }
+
+    fun restorePaths(paths: List<PathData>) {
+        _state.update { it.copy(paths = paths) }
+    }
 }
