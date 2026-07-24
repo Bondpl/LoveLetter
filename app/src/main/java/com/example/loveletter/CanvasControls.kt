@@ -66,6 +66,8 @@ fun ColumnScope.CanvasControls(
         }
     }
 
+    var showOptions by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -79,10 +81,9 @@ fun ColumnScope.CanvasControls(
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = onClearCanvas) { Text("Clear Canvas") }
+        Button(onClick = { showOptions = true }) { Text("Pen") }
     }
 
-    var showOptions by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,7 +98,7 @@ fun ColumnScope.CanvasControls(
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = { showOptions = true }) { Text("Pen") }
+        Button(onClick = onClearCanvas) { Text("Clear Canvas") }
     }
 
     if (showOptions) {

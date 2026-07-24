@@ -19,8 +19,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
@@ -31,6 +31,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 class MainActivity : ComponentActivity() {
+    private val drawingViewModel: DrawingViewModel by viewModels()
     private lateinit var fcmTokenManager: FCMTokenManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             LoveLetterTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val viewModel = viewModel<DrawingViewModel>()
+                    val viewModel = drawingViewModel
                     val state by viewModel.state.collectAsStateWithLifecycle()
                     val graphicsLayer = rememberGraphicsLayer()
                     val scope = rememberCoroutineScope()
@@ -125,4 +126,22 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onPause() {
+        super.onPause()
+        lifecycleScope.launch(Dispatchers.IO) {
+            try { CanvasStorage.savePaths(this@MainActivity, drawingViewModel.state.value.paths) } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            try {
+                val loaded = CanvasStorage.loadPaths(this@MainActivity)
+                if (loaded.isNotEmpty()) drawingViewModel.restorePaths(loaded)
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
 }
+
