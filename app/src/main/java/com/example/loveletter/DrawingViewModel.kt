@@ -72,6 +72,7 @@ class DrawingViewModel: ViewModel() {
     private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
     private val history = mutableListOf<DrawingState>()
 
+    fun getHistory(): List<DrawingState> = history.toList()
     val downloadedImage = _downloadedImage.asStateFlow()
 
     private fun pushHistory() {
@@ -156,7 +157,9 @@ class DrawingViewModel: ViewModel() {
         }
     }
 
-    fun restorePaths(paths: List<PathData>) {
-        _state.update { it.copy(paths = paths) }
+    fun restoreHistory(savedHistory: List<DrawingState>) {
+        history.clear()
+        history.addAll(savedHistory)
     }
 }
+

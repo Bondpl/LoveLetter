@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         lifecycleScope.launch(Dispatchers.IO) {
-            try { CanvasStorage.savePaths(this@MainActivity, drawingViewModel.state.value.paths) } catch (e: Exception) { e.printStackTrace() }
+            try { CanvasStorage.saveHistory(this@MainActivity, drawingViewModel.getHistory()) } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -138,8 +138,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         lifecycleScope.launch {
             try {
-                val loaded = CanvasStorage.loadPaths(this@MainActivity)
-                if (loaded.isNotEmpty()) drawingViewModel.restorePaths(loaded)
+                val loaded = CanvasStorage.loadHistory(this@MainActivity)
+                drawingViewModel.restoreHistory(loaded)
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
