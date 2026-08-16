@@ -8,12 +8,13 @@ import io.ktor.http.*
 class DrawingRepository (private val client: HttpClient){
     private val serverUrl = BuildConfig.SERVER_URL + "/api/drawings"
     private val apiKey = BuildConfig.API_KEY
-    suspend fun sendDrawing(drawing: ByteArray){
-        client.post(serverUrl){
+    suspend fun sendDrawing(drawing: ByteArray): Boolean {
+        val response = client.post(serverUrl) {
             header("api_key", apiKey)
             contentType(ContentType.Image.PNG)
             setBody(drawing)
         }
+        return response.status.value in 200..299
     }
 
     suspend fun getLatestDrawing(): ByteArray? {
