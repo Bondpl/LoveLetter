@@ -1,4 +1,4 @@
-﻿package com.example.loveletter
+package com.example.loveletter
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -144,9 +144,13 @@ class DrawingViewModel: ViewModel() {
         _state.update { it.copy(currentPath = null, paths = emptyList(), backgroundColor = Color.White) }
     }
 
-    fun uploadDrawing(pngByteArray: ByteArray) {
-        viewModelScope.launch {
-            try { repository.sendDrawing(pngByteArray) } catch (e: Exception) { e.printStackTrace() }
+    suspend fun uploadDrawing(pngByteArray: ByteArray): Boolean {
+        return try {
+            repository.sendDrawing(pngByteArray)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 
