@@ -147,7 +147,6 @@ class DrawingViewModel: ViewModel() {
     suspend fun uploadDrawing(pngByteArray: ByteArray): Boolean {
         return try {
             repository.sendDrawing(pngByteArray)
-            true
         } catch (e: Exception) {
             e.printStackTrace()
             false
