@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import android.widget.Toast
 import kotlinx.coroutines.withContext
@@ -77,6 +78,8 @@ class MainActivity : ComponentActivity() {
                             backgroundColor = state.backgroundColor,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .weight(1f)
+                                .padding(8.dp)
                                 .drawWithContent {
                                     graphicsLayer.record { this@drawWithContent.drawContent() }
                                     drawLayer(graphicsLayer)
