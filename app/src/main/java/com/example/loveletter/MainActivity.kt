@@ -1,4 +1,4 @@
-﻿package com.example.loveletter
+package com.example.loveletter
 
 import android.os.Bundle
 import android.util.Log
@@ -24,6 +24,8 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import android.widget.Toast
+import kotlinx.coroutines.withContext
 import io.ktor.client.request.post
 import kotlinx.coroutines.Dispatchers
 import io.ktor.client.request.*
@@ -89,9 +91,17 @@ class MainActivity : ComponentActivity() {
                             onClearCanvas = { viewModel.onAction(DrawingAction.OnClearCanvasClick) },
                             onSendAction = {
                                 scope.launch {
+                                    Toast.makeText(context, "Sending drawing...", Toast.LENGTH_SHORT).show()
                                     val imageBitmap = graphicsLayer.toImageBitmap()
-                                    val pngByteArray = imageBitmap.toPngByteArray()
-                                    try { viewModel.uploadDrawing(pngByteArray) } catch (e: Exception) { e.printStackTrace() }
+                                    val pngByteArray = withContext(Dispatchers.Default) {
+                                        imageBitmap.toPngByteArray()
+                                    }
+                                    val success = viewModel.uploadDrawing(pngByteArray)
+                                    if (success) {
+                                        Toast.makeText(context, "Drawing sent!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Failed to send drawing. Please try again.", Toast.LENGTH_LONG).show()
+                                    }
                                 }
                             },
                             onUndo = { viewModel.onAction(DrawingAction.OnUndo) },
