@@ -77,7 +77,6 @@ class MainActivity : ComponentActivity() {
                             backgroundColor = state.backgroundColor,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
                                 .drawWithContent {
                                     graphicsLayer.record { this@drawWithContent.drawContent() }
                                     drawLayer(graphicsLayer)

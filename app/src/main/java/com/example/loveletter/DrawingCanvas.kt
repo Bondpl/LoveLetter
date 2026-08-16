@@ -1,11 +1,11 @@
-﻿package com.example.loveletter
+package com.example.loveletter
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 
@@ -31,14 +30,10 @@ fun DrawingCanvas(
     backgroundColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val optimalCanvasHeight = screenWidth * 0.85f
-
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(optimalCanvasHeight)
+            .aspectRatio(1f)
             .clipToBounds()
             .background(backgroundColor)
             .border(2.dp, Color.LightGray, RoundedCornerShape(16.dp))
