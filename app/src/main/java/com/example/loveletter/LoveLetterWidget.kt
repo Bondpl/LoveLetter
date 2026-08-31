@@ -1,68 +1,85 @@
 package com.example.loveletter
 
-import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.view.View
-import android.widget.RemoteViews
+import androidx.compose.ui.graphics.Color
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.updateAll
+import androidx.glance.color.ColorProvider
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.ContentScale
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.File
 
-class LoveLetterWidget : AppWidgetProvider() {
+class LoveLetterWidget : GlanceAppWidget() {
 
-    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            updateWidgetUI(context, appWidgetManager, appWidgetId, null, "Waiting on a letter...")
+    // Tryb Single sprawia, że kontener dostosowuje się do rozmiaru przydzielonego przez launcher
+    override val sizeMode = SizeMode.Single
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val file = File(context.filesDir, WIDGET_IMAGE_FILE)
+        val bitmap: Bitmap? = if (file.exists()) {
+            BitmapFactory.decodeFile(file.absolutePath)
+        } else null
+
+        provideContent {
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .clickable(actionStartActivity<MainActivity>()),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    // ContentScale.Fit gwarantuje, że cały rysunek zmieści się na dowolnym telefonie
+                    Image(
+                        provider = ImageProvider(bitmap),
+                        contentDescription = "Love Letter Drawing",
+                        contentScale = ContentScale.Fit,
+                        modifier = GlanceModifier.fillMaxSize()
+                    )
+                } else {
+                    Text(
+                        text = "Waiting on a letter...",
+                        style = TextStyle(color = ColorProvider(day = Color.Black, night = Color.White))
+                    )
+                }
+            }
         }
     }
 
     companion object {
-        private fun updateWidgetUI(
-            context: Context,
-            appWidgetManager: AppWidgetManager,
-            appWidgetId: Int,
-            imageBytes: ByteArray?,
-            statusText: String?
-        ) {
-            val views = RemoteViews(context.packageName, R.layout.widget_layout)
-
-            val intent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
-
-            if (imageBytes != null) {
-                val bmp: Bitmap? = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                if (bmp != null) {
-                    views.setImageViewBitmap(R.id.widget_image, bmp)
-                    views.setViewVisibility(R.id.widget_image, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_text, View.GONE)
-                }
-            } else if (statusText != null) {
-                views.setTextViewText(R.id.widget_text, statusText)
-                views.setViewVisibility(R.id.widget_image, View.GONE)
-                views.setViewVisibility(R.id.widget_text, View.VISIBLE)
-            }
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
+        private const val WIDGET_IMAGE_FILE = "latest_widget_image.png"
 
         fun updateWidgetImage(context: Context, imageBytes: ByteArray) {
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = android.content.ComponentName(context, LoveLetterWidget::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-            for (appWidgetId in appWidgetIds) {
-                updateWidgetUI(context, appWidgetManager, appWidgetId, imageBytes, null)
+            try {
+                val file = File(context.filesDir, WIDGET_IMAGE_FILE)
+                file.writeBytes(imageBytes)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            CoroutineScope(Dispatchers.Main).launch {
+                LoveLetterWidget().updateAll(context)
             }
         }
     }
+}
+
+class LoveLetterWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = LoveLetterWidget()
 }

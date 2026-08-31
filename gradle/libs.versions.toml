@@ -12,6 +12,7 @@ okhttp = "5.4.0"
 ui = "1.11.2"
 ktor = "2.3.5"
 appcompat = "1.6.1"
+glanceAppwidget = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ io-ktor-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-seri
 io-ktor-ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glanceAppwidget" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

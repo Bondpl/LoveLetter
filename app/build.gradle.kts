@@ -73,4 +73,5 @@ dependencies {
     implementation(libs.okhttp)
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation(libs.firebase.messaging)
+    implementation("com.google.code.gson:gson:2.14.0")
 }
