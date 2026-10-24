@@ -94,38 +94,18 @@ fun WaitingScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Row(
+        Button(
+            onClick = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("LoveLetter Code", pairCode))
+                Toast.makeText(context, "Pair code copied to clipboard", Toast.LENGTH_SHORT).show()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            shape = RoundedCornerShape(12.dp)
         ) {
-            OutlinedButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("LoveLetter Code", pairCode))
-                    Toast.makeText(context, "Pair code copied to clipboard", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Copy Code")
-            }
-
-            Button(
-                onClick = {
-                    val shareIntent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_TEXT, "Join my LoveLetter pair with this code: $pairCode")
-                        type = "text/plain"
-                    }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share Pair Code"))
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Share")
-            }
+            Text("Copy Code")
         }
 
         Spacer(modifier = Modifier.height(40.dp))
