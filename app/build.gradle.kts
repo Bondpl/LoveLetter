@@ -14,7 +14,7 @@ val localProperties = Properties().apply {
     }
 }
 
-val serverUrl = localProperties.getProperty("MY_SERVER_URL") ?: "https://api.your-domain.com"
+val serverUrl = localProperties.getProperty("MY_EU_SERVER_URL") ?: "https://api.your-domain.com"
 val apiKey = localProperties.getProperty("MY_API_KEY") ?: "DEBUG_API_KEY"
 
 android {
@@ -88,4 +88,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
 }

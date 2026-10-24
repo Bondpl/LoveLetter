@@ -1,27 +1,43 @@
 package com.example.loveletter
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
+import android.content.Context
+import com.example.loveletter.data.network.LoveLetterApiService
+import com.example.loveletter.data.network.NetworkClient
+import com.example.loveletter.data.repository.AuthRepository
+import com.example.loveletter.data.repository.DrawingRepository
+import com.example.loveletter.data.storage.SessionManager
 
 object NetworkModule {
-    val client by lazy {
-        HttpClient(OkHttp) {
-            engine {
-                config {
-                    followRedirects(true)
-                    connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                    readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                }
-            }
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                })
-            }
+    @Volatile
+    private var appContext: Context? = null
+
+    fun initialize(context: Context) {
+        if (appContext == null) {
+            appContext = context.applicationContext
         }
+    }
+
+    private fun getContext(context: Context? = null): Context {
+        return context?.applicationContext
+            ?: appContext
+            ?: throw IllegalStateException("NetworkModule not initialized with Context")
+    }
+
+    fun getSessionManager(context: Context? = null): SessionManager {
+        return SessionManager.getInstance(getContext(context))
+    }
+
+    fun getApiService(context: Context? = null): LoveLetterApiService {
+        return NetworkClient.getApiService(getContext(context))
+    }
+
+    fun getAuthRepository(context: Context? = null): AuthRepository {
+        val ctx = getContext(context)
+        return AuthRepository(getApiService(ctx), getSessionManager(ctx))
+    }
+
+    fun getDrawingRepository(context: Context? = null): DrawingRepository {
+        val ctx = getContext(context)
+        return DrawingRepository(getApiService(ctx), getSessionManager(ctx))
     }
 }

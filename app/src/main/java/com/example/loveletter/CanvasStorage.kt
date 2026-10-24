@@ -36,4 +36,15 @@ object CanvasStorage {
             emptyList()
         }
     }
+
+    suspend fun clearHistory(context: Context) = withContext(Dispatchers.IO) {
+        try {
+            val file = File(context.filesDir, FILE_NAME)
+            if (file.exists()) file.delete()
+            val tmp = File(context.filesDir, "$FILE_NAME.tmp")
+            if (tmp.exists()) tmp.delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

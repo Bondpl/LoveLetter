@@ -5,62 +5,65 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import io.ktor.client.request.*
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 
 class PushNotificationService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        remoteMessage.notification?.let { notification ->
-            sendNotification(
-                title = notification.title ?: "New message",
-                body = notification.body ?: "Click to open",
-                data = remoteMessage.data
-            )
-        }
+        val type = remoteMessage.data["type"]
+        val title = remoteMessage.data["title"]
+            ?: remoteMessage.notification?.title
+            ?: "New Drawing"
+        val body = remoteMessage.data["body"]
+            ?: remoteMessage.notification?.body
+            ?: "Your partner sent you a drawing!"
 
-        if (remoteMessage.data.isNotEmpty()) {
-            sendNotification(
-                title = remoteMessage.data["title"] ?: "New picture",
-                body = remoteMessage.data["body"] ?: "check main menu",
-                data = remoteMessage.data
-            )
-        }
+        sendNotification(title = title, body = body, data = remoteMessage.data)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val repository = DrawingRepository(NetworkModule.client)
-                val imageBytes = repository.getLatestDrawing()
-
-                if (imageBytes != null) {
-                    Log.d("PushService", "Downloaded image from API, size=${imageBytes.size}")
-                    LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
-                } else {
-                    Log.d("PushService", "No image available from API")
+        if (type == "NEW_DRAWING" || remoteMessage.data.isNotEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val repository = NetworkModule.getDrawingRepository(applicationContext)
+                    val result = repository.getLatestDrawing()
+                    result.onSuccess { imageBytes ->
+                        if (imageBytes != null) {
+                            Log.d("PushService", "Downloaded and decrypted drawing, size=${imageBytes.size}")
+                            LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
+                            DrawingUpdateBus.notifyNewDrawing(imageBytes)
+                        } else {
+                            Log.d("PushService", "No new drawing found")
+                        }
+                    }.onFailure { error ->
+                        Log.e("PushService", "Error downloading/decrypting drawing", error)
+                    }
+                } catch (e: Exception) {
+                    Log.e("PushService", "Failed to fetch/update image", e)
                 }
-            } catch (e: Exception) {
-                Log.e("PushService", "Failed to fetch/update image", e)
             }
         }
     }
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        sendTokenToServer(token)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                NetworkModule.getAuthRepository(applicationContext).updateFcmToken(token)
+                Log.d("FCM", "FCM token updated successfully onNewToken")
+            } catch (e: Exception) {
+                Log.e("FCM", "Failed to update FCM token onNewToken", e)
+            }
+        }
     }
 
     private fun sendNotification(title: String, body: String, data: Map<String, String> = emptyMap()) {
-        val channelId = CHANNEL_ID
         createNotificationChannel()
 
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -77,7 +80,7 @@ class PushNotificationService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, channelId)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -100,24 +103,6 @@ class PushNotificationService : FirebaseMessagingService() {
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun sendTokenToServer(token: String) {
-        val client = NetworkModule.client
-        val url = "${BuildConfig.SERVER_URL}/api/fcm-token"
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                client.post(url) {
-                    header("api_key", BuildConfig.API_KEY)
-                    contentType(ContentType.Application.Json)
-                    setBody(mapOf("token" to token))
-                }
-                Log.d("FCM", "FCM token sent to server")
-            } catch (e: Exception) {
-                Log.e("FCM", "Failed to send FCM token to server", e)
-            }
         }
     }
 

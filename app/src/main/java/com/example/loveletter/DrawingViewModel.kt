@@ -3,10 +3,11 @@ package com.example.loveletter
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.loveletter.data.repository.DrawingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -70,17 +71,32 @@ sealed interface DrawingAction {
     data class OnSetBrushType(val type: BrushType): DrawingAction
 }
 
-class DrawingViewModel: ViewModel() {
-    private val repository = DrawingRepository(NetworkModule.client)
+class DrawingViewModel : ViewModel() {
+    private val repository: DrawingRepository = NetworkModule.getDrawingRepository()
 
     private val _state = MutableStateFlow(DrawingState())
     val state = _state.asStateFlow()
 
     private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
+    val downloadedImage = _downloadedImage.asStateFlow()
+
+    private val _isSending = MutableStateFlow(false)
+    val isSending = _isSending.asStateFlow()
+
+    private val _isFetching = MutableStateFlow(false)
+    val isFetching = _isFetching.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            DrawingUpdateBus.drawingUpdates.collect { bytes ->
+                _downloadedImage.value = bytes
+            }
+        }
+    }
+
     private val history = mutableListOf<DrawingState>()
 
     fun getHistory(): List<DrawingState> = history.toList()
-    val downloadedImage = _downloadedImage.asStateFlow()
 
     private fun pushHistory() {
         history.add(state.value.copy(paths = state.value.paths.toList()))
@@ -151,24 +167,65 @@ class DrawingViewModel: ViewModel() {
         _state.update { it.copy(currentPath = null, paths = emptyList(), backgroundColor = Color.White) }
     }
 
-    suspend fun uploadDrawing(pngByteArray: ByteArray): Boolean {
+    suspend fun uploadDrawing(pngByteArray: ByteArray): Result<Unit> {
+        _isSending.value = true
         return try {
             repository.sendDrawing(pngByteArray)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
+        } finally {
+            _isSending.value = false
         }
     }
 
     fun fetchLatestDrawing() {
         viewModelScope.launch {
-            val bytes = repository.getLatestDrawing()
-            if (bytes != null) _downloadedImage.value = bytes
+            _isFetching.value = true
+            try {
+                val result = repository.getLatestDrawing()
+                result.onSuccess { bytes ->
+                    if (bytes != null) {
+                        _downloadedImage.value = bytes
+                    }
+                }
+            } finally {
+                _isFetching.value = false
+            }
+        }
+    }
+
+    fun loadCachedImage(context: android.content.Context) {
+        if (_downloadedImage.value != null) return
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val file = java.io.File(context.filesDir, "latest_widget_image.png")
+                if (file.exists()) {
+                    val bytes = file.readBytes()
+                    if (bytes.isNotEmpty()) {
+                        _downloadedImage.value = bytes
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun restoreHistory(savedHistory: List<DrawingState>) {
         history.clear()
         history.addAll(savedHistory)
+    }
+
+    fun clearAll(context: android.content.Context) {
+        _state.value = DrawingState()
+        _downloadedImage.value = null
+        DrawingUpdateBus.clear()
+        history.clear()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                CanvasStorage.clearHistory(context)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            LoveLetterWidget.clearWidget(context)
+        }
     }
 }
