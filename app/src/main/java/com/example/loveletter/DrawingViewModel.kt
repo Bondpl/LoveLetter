@@ -24,7 +24,7 @@ val flattenedColors = listOf(
     Color(0xFF5C3705), // brown
     Color(0xFF000000), // black
     Color(0xFFB0B0B0), // grey
-    Color(0xFFFAFAFA), // white
+    Color(0xFFFFFFFF), // pure white (matches canvas)
     Color(0xFFEB5050), // cherry
     Color(0xFFF765B8), // pink
     Color(0xFF0000FF), // blue
@@ -33,8 +33,7 @@ val flattenedColors = listOf(
     Color(0xFF4FAB61), // grass
     Color(0xFF1F660F), // forest
     Color(0xFFFFFF00), // yellow
-    Color(0xFFFF00FF), // magenta
-    Color(0xFF123456)  // sentinel -> tools icon
+    Color(0xFFFF00FF)  // magenta
 )
 
 @Serializable

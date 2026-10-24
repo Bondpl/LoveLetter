@@ -8,6 +8,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -30,6 +32,14 @@ fun DrawingCanvas(
     backgroundColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
+    // Cache for completed Path objects so we do not re-create Path() every single frame
+    val pathCache = remember { mutableMapOf<String, Path>() }
+
+    LaunchedEffect(paths) {
+        val activeIds = paths.map { it.id }.toSet()
+        pathCache.keys.retainAll(activeIds)
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxWidth()
@@ -59,15 +69,33 @@ fun DrawingCanvas(
             }
     ) {
         paths.fastForEach { pathData ->
-            drawPathWithType(pathData)
+            val cachedPath = if (pathData.path.size > 1) {
+                pathCache.getOrPut(pathData.id) {
+                    createComposePath(pathData.path)
+                }
+            } else null
+            drawPathWithType(pathData, cachedPath)
         }
         currentPath?.let {
-            drawPathWithType(it)
+            val livePath = if (it.path.size > 1) createComposePath(it.path) else null
+            drawPathWithType(it, livePath)
         }
     }
 }
 
-private fun DrawScope.drawPathWithType(pathData: PathData) {
+private fun createComposePath(points: List<androidx.compose.ui.geometry.Offset>): Path {
+    return Path().apply {
+        if (points.isNotEmpty()) {
+            moveTo(points.first().x, points.first().y)
+            for (i in 1..points.lastIndex) {
+                val to = points[i]
+                lineTo(to.x, to.y)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawPathWithType(pathData: PathData, path: Path?) {
     if (pathData.path.isEmpty()) return
 
     val isHighlighter = pathData.brushType == BrushType.HIGHLIGHTER
@@ -87,22 +115,16 @@ private fun DrawScope.drawPathWithType(pathData: PathData) {
         return
     }
 
-    val simplePath = Path().apply {
-        moveTo(pathData.path.first().x, pathData.path.first().y)
-        for (i in 1..pathData.path.lastIndex) {
-            val to = pathData.path[i]
-            lineTo(to.x, to.y)
-        }
-    }
-
-    drawPath(
-        path = simplePath,
-        color = color,
-        style = Stroke(
-            width = strokeWidth,
-            cap = StrokeCap.Round,
-            join = StrokeJoin.Round,
-            pathEffect = pathEffect
+    if (path != null) {
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(
+                width = strokeWidth,
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+                pathEffect = pathEffect
+            )
         )
-    )
+    }
 }

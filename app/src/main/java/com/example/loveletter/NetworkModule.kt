@@ -11,6 +11,12 @@ object NetworkModule {
     @Volatile
     private var appContext: Context? = null
 
+    @Volatile
+    private var authRepository: AuthRepository? = null
+
+    @Volatile
+    private var drawingRepository: DrawingRepository? = null
+
     fun initialize(context: Context) {
         if (appContext == null) {
             appContext = context.applicationContext
@@ -32,12 +38,20 @@ object NetworkModule {
     }
 
     fun getAuthRepository(context: Context? = null): AuthRepository {
-        val ctx = getContext(context)
-        return AuthRepository(getApiService(ctx), getSessionManager(ctx))
+        return authRepository ?: synchronized(this) {
+            authRepository ?: run {
+                val ctx = getContext(context)
+                AuthRepository(getApiService(ctx), getSessionManager(ctx)).also { authRepository = it }
+            }
+        }
     }
 
     fun getDrawingRepository(context: Context? = null): DrawingRepository {
-        val ctx = getContext(context)
-        return DrawingRepository(getApiService(ctx), getSessionManager(ctx))
+        return drawingRepository ?: synchronized(this) {
+            drawingRepository ?: run {
+                val ctx = getContext(context)
+                DrawingRepository(getApiService(ctx), getSessionManager(ctx)).also { drawingRepository = it }
+            }
+        }
     }
 }

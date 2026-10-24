@@ -1,6 +1,7 @@
-﻿package com.example.loveletter
+package com.example.loveletter
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,10 +17,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,57 +50,100 @@ fun ColumnScope.CanvasControls(
 ) {
     val scrollState = rememberScrollState()
 
+    // 1. Color picker row
     Row(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(scrollState)
             .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         for (color in colors) {
-            if (color == Color(0xFF123456)) {
-                IconButton(onClick = { onFill(selectedColor) }) {
-                    Icon(painter = painterResource(id = R.drawable.outline_arrow_circle_up_24), contentDescription = "Fill", modifier = Modifier.size(40.dp))
-                }
-            } else {
-                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(color).clickable { onSelectColor(color) })
-            }
+            val isSelected = color == selectedColor
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .border(
+                        width = if (isSelected) 3.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                        shape = CircleShape
+                    )
+                    .clickable { onSelectColor(color) }
+            )
         }
     }
 
     var showOptions by remember { mutableStateOf(false) }
 
+    // 2. Brush sizes, pen style and dedicated Fill action button
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { onSetBrushLevel(1) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_1_24), contentDescription = "Size 1") }
-        IconButton(onClick = { onSetBrushLevel(2) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_2_24), contentDescription = "Size 2") }
-        IconButton(onClick = { onSetBrushLevel(3) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_3_24), contentDescription = "Size 3") }
-        IconButton(onClick = { onSetBrushLevel(4) }) { Icon(painter = painterResource(id = R.drawable.outline_pen_size_4_24), contentDescription = "Size 4") }
+        IconButton(onClick = { onSetBrushLevel(1) }) {
+            Icon(painter = painterResource(id = R.drawable.outline_pen_size_1_24), contentDescription = "Size 1")
+        }
+        IconButton(onClick = { onSetBrushLevel(2) }) {
+            Icon(painter = painterResource(id = R.drawable.outline_pen_size_2_24), contentDescription = "Size 2")
+        }
+        IconButton(onClick = { onSetBrushLevel(3) }) {
+            Icon(painter = painterResource(id = R.drawable.outline_pen_size_3_24), contentDescription = "Size 3")
+        }
+        IconButton(onClick = { onSetBrushLevel(4) }) {
+            Icon(painter = painterResource(id = R.drawable.outline_pen_size_4_24), contentDescription = "Size 4")
+        }
 
-        Spacer(modifier = Modifier.size(8.dp))
+        Spacer(modifier = Modifier.size(6.dp))
 
-        Button(onClick = { showOptions = true }) { Text("Pen") }
+        Button(onClick = { showOptions = true }) {
+            Text("Pen")
+        }
+
+        Spacer(modifier = Modifier.size(6.dp))
+
+        // Dedicated Fill Background tool
+        IconButton(onClick = { onFill(selectedColor) }) {
+            Icon(
+                painter = painterResource(id = R.drawable.outline_format_paint_24),
+                contentDescription = "Fill Canvas Background",
+                modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 
+    // 3. Actions: Send, Undo, Clear
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Button(onClick = onSendAction, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4DA6FF))) { Text("Send") }
+        Button(
+            onClick = onSendAction,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4DA6FF))
+        ) {
+            Text("Send")
+        }
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = onUndo) { Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Reverse") }
+        Button(onClick = onUndo) {
+            Icon(painter = painterResource(id = R.drawable.outline_backspace_24), contentDescription = "Undo")
+        }
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(onClick = onClearCanvas) { Text("Clear Canvas") }
+        Button(onClick = onClearCanvas) {
+            Text("Clear Canvas")
+        }
     }
 
     if (showOptions) {
@@ -107,11 +152,24 @@ fun ColumnScope.CanvasControls(
             title = { Text("Pen Options") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Button(onClick = { onSetBrushType(BrushType.DASHED); showOptions = false }) { Text("Dashed") }
+                    Button(onClick = { onSetBrushType(BrushType.MARKER); showOptions = false }) {
+                        Text("Marker (Standard)")
+                    }
                     Spacer(modifier = Modifier.size(8.dp))
-                    Button(onClick = { onSetBrushType(BrushType.CONTINUOUS); showOptions = false }) { Text("Continuous") }
+                    Button(onClick = { onSetBrushType(BrushType.DASHED); showOptions = false }) {
+                        Text("Dashed")
+                    }
                     Spacer(modifier = Modifier.size(8.dp))
-                    Button(onClick = { onSetBrushType(BrushType.HIGHLIGHTER); showOptions = false }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF69B4))) { Text("Highlighter") }
+                    Button(onClick = { onSetBrushType(BrushType.CONTINUOUS); showOptions = false }) {
+                        Text("Continuous")
+                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Button(
+                        onClick = { onSetBrushType(BrushType.HIGHLIGHTER); showOptions = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF69B4))
+                    ) {
+                        Text("Highlighter")
+                    }
                 }
             },
             confirmButton = {},
@@ -119,4 +177,3 @@ fun ColumnScope.CanvasControls(
         )
     }
 }
-
