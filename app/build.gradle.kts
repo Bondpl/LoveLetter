@@ -1,9 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     id("com.google.gms.google-services")
 }
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+val serverUrl = localProperties.getProperty("MY_SERVER_URL") ?: "https://api.your-domain.com"
+val apiKey = localProperties.getProperty("MY_API_KEY") ?: "DEBUG_API_KEY"
 
 android {
     namespace = "com.example.loveletter"
@@ -21,8 +33,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "SERVER_URL", "\"https://api.your-domain.com\"")
-        buildConfigField("String", "API_KEY", "\"DEBUG_API_KEY\"")
+        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
+        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
