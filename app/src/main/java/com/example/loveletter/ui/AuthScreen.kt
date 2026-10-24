@@ -190,7 +190,6 @@ fun AuthScreen(
                         }
                     },
                     label = { Text("6-digit code") },
-                    placeholder = { Text("e.g. 123456") },
                     singleLine = true,
                     enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(
