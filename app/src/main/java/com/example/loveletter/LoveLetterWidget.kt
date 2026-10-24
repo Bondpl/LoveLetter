@@ -29,7 +29,6 @@ import java.io.File
 
 class LoveLetterWidget : GlanceAppWidget() {
 
-    // Tryb Single sprawia, że kontener dostosowuje się do rozmiaru przydzielonego przez launcher
     override val sizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -46,7 +45,6 @@ class LoveLetterWidget : GlanceAppWidget() {
                 contentAlignment = Alignment.Center
             ) {
                 if (bitmap != null) {
-                    // ContentScale.Fit gwarantuje, że cały rysunek zmieści się na dowolnym telefonie
                     Image(
                         provider = ImageProvider(bitmap),
                         contentDescription = "Love Letter Drawing",
