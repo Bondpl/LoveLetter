@@ -216,7 +216,6 @@ fun DrawingMainScreen(
         )
     }
 
-    // Modal dialog displaying partner's drawing — completely isolated from Canvas size
     if (showPartnerDrawingDialog && partnerBitmap != null) {
         Dialog(
             onDismissRequest = { showPartnerDrawingDialog = false },
@@ -239,7 +238,7 @@ fun DrawingMainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "💌 Partner's Drawing",
+                            text = "Partner's Art",
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -255,7 +254,7 @@ fun DrawingMainScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
@@ -271,7 +270,8 @@ fun DrawingMainScreen(
 
                     Button(
                         onClick = { showPartnerDrawingDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("Back to Drawing Canvas")
                     }
@@ -284,15 +284,22 @@ fun DrawingMainScreen(
         topBar = {
             TopAppBar(
                 title = {
+                    Text(
+                        text = "LoveLetter",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 },
                 actions = {
                     if (partnerBitmap != null) {
                         FilledTonalButton(
                             onClick = { showPartnerDrawingDialog = true },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.padding(end = 4.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(end = 4.dp),
+                            shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("💌 Partner", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Partner's Art", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -303,11 +310,8 @@ fun DrawingMainScreen(
                                 .padding(end = 8.dp),
                             strokeWidth = 2.dp
                         )
-                    } else {
-                        TextButton(onClick = { drawingViewModel.fetchLatestDrawing() }) {
-                            Text("Refresh")
-                        }
                     }
+
                     TextButton(
                         onClick = { showDisconnectDialog = true },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -334,7 +338,7 @@ fun DrawingMainScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(8.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
                     .drawWithContent {
                         graphicsLayer.record { this@drawWithContent.drawContent() }
                         drawLayer(graphicsLayer)
@@ -349,15 +353,12 @@ fun DrawingMainScreen(
                 onSendAction = {
                     if (isSending) return@CanvasControls
                     scope.launch {
-                        Toast.makeText(context, "Encrypting & uploading drawing...", Toast.LENGTH_SHORT).show()
                         val imageBitmap = graphicsLayer.toImageBitmap()
                         val pngByteArray = withContext(Dispatchers.Default) {
                             imageBitmap.toPngByteArray()
                         }
                         val result = drawingViewModel.uploadDrawing(pngByteArray)
-                        result.onSuccess {
-                            Toast.makeText(context, "Drawing encrypted & sent! 💌", Toast.LENGTH_SHORT).show()
-                        }.onFailure { error ->
+                        result.onFailure { error ->
                             val msg = error.message ?: "Upload failed"
                             Toast.makeText(context, "Failed to send: $msg", Toast.LENGTH_LONG).show()
                         }
@@ -371,6 +372,8 @@ fun DrawingMainScreen(
                     drawingViewModel.onAction(DrawingAction.OnSetBrushSize(size))
                 },
                 brushThickness = state.brushThickness,
+                currentBrushType = state.brushType,
+                isSending = isSending,
                 modifier = Modifier.fillMaxWidth()
             )
         }

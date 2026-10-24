@@ -15,25 +15,32 @@ import kotlinx.serialization.Serializable
 enum class BrushType { DASHED, CONTINUOUS, MARKER, HIGHLIGHTER }
 
 val flattenedColors = listOf(
-    Color(0xFFFF0000), // red
-    Color(0xFF2B98E0), // sky
-    Color(0xFF5638B5), // purple
-    Color(0xFF00AA00), // green
-    Color(0xFFFAEA34), // banana
-    Color(0xFFEB9E1E), // orange
-    Color(0xFF5C3705), // brown
     Color(0xFF000000), // black
     Color(0xFFB0B0B0), // grey
     Color(0xFFFFFFFF), // pure white (matches canvas)
-    Color(0xFFEB5050), // cherry
+
+    Color(0xFFFF0000), // red
+    Color(0xFFEB5050), // cherry red
     Color(0xFFF765B8), // pink
+    Color(0xFFFF00FF), // magenta
+
+    // Purples
+    Color(0xFF5638B5), // purple
+
+    Color(0xFF15268F), // navy blue
     Color(0xFF0000FF), // blue
-    Color(0xFF84C0E8), // opalite
-    Color(0xFF15268F), // navy
-    Color(0xFF4FAB61), // grass
-    Color(0xFF1F660F), // forest
+    Color(0xFF2B98E0), // sky blue
+    Color(0xFF84C0E8), // light opalite
+
+    Color(0xFF1F660F), // forest green
+    Color(0xFF00AA00), // green
+    Color(0xFF4FAB61), // grass green
+
     Color(0xFFFFFF00), // yellow
-    Color(0xFFFF00FF)  // magenta
+    Color(0xFFFAEA34), // banana yellow
+
+    Color(0xFFEB9E1E), // orange
+    Color(0xFF5C3705)  // brown
 )
 
 @Serializable

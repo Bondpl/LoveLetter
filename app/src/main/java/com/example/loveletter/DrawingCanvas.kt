@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -45,8 +46,8 @@ fun DrawingCanvas(
             .fillMaxWidth()
             .clipToBounds()
             .background(backgroundColor)
-            .border(2.dp, Color.LightGray, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
+            .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset ->
