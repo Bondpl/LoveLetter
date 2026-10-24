@@ -1,58 +1,120 @@
 <div align="center">
-  <img width="256" height="256" alt="Love Letter Icon" src="https://github.com/user-attachments/assets/01eb5e4c-cbb7-4072-99ac-fcfc3c611f1d" />
+  <img width="180" height="180" alt="Love Letter Icon" src="https://github.com/user-attachments/assets/01eb5e4c-cbb7-4072-99ac-fcfc3c611f1d" />
 
-  # Love Letter 💌
-  
-  *A private, real-time drawing messenger designed exclusively for two people.*
-</div>
-  
-  *A private, real-time drawing messenger designed exclusively for two people.*
-</div>
-  <p align="center">                                                                 
-<img width="250" height="600"  style="margin-right: 800px;" alt="72d0f0be-8cd7-41f9-8116-9fead950d667" src="https://github.com/user-attachments/assets/802dd83e-fa5c-4bbb-809c-efa895e00683" />                                                                                       
-<img width="250" height="600"  style="margin-left: 800px;" alt="5b1f1fa1-07a6-4ddc-a22e-5400738a8eec" src="https://github.com/user-attachments/assets/0c0cb71e-2243-4ff1-89f1-bea748aad6b8" />                      
-    </p>    
+  # Love Letter
 
+  *A private, end-to-end encrypted drawing messenger designed for pairs.*
+</div>
+
+<p align="center">
+  <img width="260" alt="Love Letter Canvas Screen" src="https://github.com/user-attachments/assets/802dd83e-fa5c-4bbb-809c-efa895e00683" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img width="260" alt="Love Letter Widget" src="https://github.com/user-attachments/assets/0c0cb71e-2243-4ff1-89f1-bea748aad6b8" />
+</p>
 
 ---
 
-## 📖 About The Project
+## Overview
 
-**Love Letter** is a unique Android application built to bridge the distance between two specific users. Instead of text messages, users communicate by sending hand-drawn doodles directly to each other's Android Home Screen. 
+**Love Letter** is a private Android application designed exclusively for two connected partners. Instead of standard text messages, partners exchange handwritten notes and drawings that appear directly on each other's Android Home Screen widget.
 
-When one person finishes a drawing and hits send, the app silently wakes up the partner's phone in the background, downloads the new art, and instantly updates their home screen widget — ensuring that a personal, handwritten surprise is waiting for them the next time they unlock their phone.
+When a user finishes a drawing and sends it, the backend dispatches a silent push notification that wakes the partner's device in the background. The device downloads the encrypted drawing, decrypts it locally, and refreshes the home screen widget in real time without requiring the recipient to open the app.
 
-## ✨ Key Features
+---
 
-* **Home Screen Widget:** A fully responsive Android widget that displays the latest received drawing.
-* **Background Synchronization:** Uses silent Firebase Cloud Messaging `data` payloads to fetch new drawings in the background without requiring the app to be open.
-* **Interactive Canvas:** A built-in drawing tool supporting multiple colors, clearing canvas and smooth paths.
-* **Auto-Cleaning Database:** The backend automatically purges drawings older than 3 days to keep the database lightweight and cost-effective.
-* **Secure Connection:** End-to-end encrypted transit via Google Cloud Run with API Key authentication.
+## Key Features
 
-## 🛠️ Tech Stack
+* **Home Screen Widget:** Built with Jetpack Glance, rendering the latest received partner drawing on the Android launcher with automatic resizing and session state awareness.
+* **End-to-End Encryption (E2EE):** Drawings are encrypted on the sender's device using AES-256-GCM. The encryption key is derived via Elliptic Curve Diffie-Hellman (ECDH) on the `secp256r1` curve. Neither the backend server nor cloud storage can access the plaintext drawings.
+* **Background Push Synchronization:** Silent Firebase Cloud Messaging (FCM) data messages wake the recipient's phone under system WakeLock guarantees to download, decrypt, and update the widget immediately.
+* **Drawing Canvas:** Full-screen vector drawing canvas featuring:
+  * Multi-color palette with active selection highlighting and canvas-matching pure white.
+  * Dedicated canvas background fill tool.
+  * Multiple brush types: Standard Marker, Dashed, Continuous, and Highlighter.
+  * 4 brush thickness levels.
+  * Undo history stack and single-tap dot support.
+  * Automatic state caching across application pauses and process recreation.
+  * Hardware-accelerated path caching for smooth 60-120 FPS rendering.
+* **Secure Pairing System:**
+  * 6-digit invitation codes valid for 24 hours.
+  * Public key exchange during pairing.
+  * Real-time disconnect alerts (`PAIR_DISCONNECTED`) that clear the session, history, and home screen widget on both devices instantly.
+  * Automatic cleanup of expired drawings on storage.
 
-**Frontend (Android):**
-* Kotlin
-* Jetpack Compose (UI & Canvas)
-* Kotlin Coroutines & Flow
-* Ktor Client (Networking)
+---
 
-**Backend & Infrastructure:**
-* Node.js & TypeScript
-* PostgreSQL
-* Firebase Cloud Messaging
-* Google Cloud Run
+## Security and Cryptography
 
-## 🚀 How It Works (The Magic)
+The application implements zero-knowledge end-to-end encryption for all drawings:
 
-Because the app is strictly for two users, it avoids complex login screens. It relies on a one-to-one API Key pairing system:
-1. User A draws an image and sends it via an HTTP POST request.
-2. The Node.js server saves the `ByteArray` to PostgreSQL and triggers an FCM notification to User B's device token.
-3. User B's Android system catches the silent notification via `PushNotificationService`.
-4. The app fetches the new drawing from the server and updating the home screen dynamically.
+1. **Key Generation:** Each device generates an asymmetric EC key pair (`secp256r1` / NIST P-256) upon pairing initiation.
+2. **Key Exchange:** The base64-encoded public keys are exchanged during the initial pairing handshake (`/api/auth/anonymous` and `/api/pairs/join`). Private keys remain in Android private app storage.
+3. **Shared Secret Derivation:** Both devices independently compute the shared secret using ECDH and derive an AES-256 encryption key via SHA-256.
+4. **Drawing Encryption:** The drawing PNG byte stream is encrypted with AES/GCM/NoPadding using a unique 12-byte initialization vector (IV) generated via `SecureRandom`.
+5. **Decryption:** The recipient downloads the encrypted payload from cloud storage and decrypts it using their local private key and the sender's public key.
 
-## ⚙️ Local Setup
+---
 
-Since this is a private application, API keys and server URLs are not included in the repository for security reasons.
-Also, have to provide google-services.json file for Firebase Cloud Messaging to work.
+## Tech Stack
+
+### Android Client
+* **Language:** Kotlin
+* **UI:** Jetpack Compose (Material 3)
+* **Widget:** Jetpack Glance (`GlanceAppWidget`, `PreferencesGlanceStateDefinition`)
+* **Networking:** Retrofit 2, OkHttp 3, Kotlinx Serialization
+* **Asynchronous:** Kotlin Coroutines, StateFlow, SharedFlow
+* **Cryptography:** Java Cryptography Architecture (JCA: ECDH `secp256r1`, AES-256-GCM, SHA-256)
+* **Push Notifications:** Firebase Cloud Messaging (FCM)
+
+### Backend & Cloud Architecture
+* **Runtime:** Node.js, TypeScript (Google Cloud Run)
+* **Database:** PostgreSQL (Pairing state, anonymous user tokens, ephemeral codes)
+* **Object Storage:** S3-compatible cloud storage (Encrypted drawing payloads via presigned URLs)
+* **Messaging:** Firebase Admin SDK (Silent Data Messages)
+
+---
+
+## How It Works
+
+### Pairing
+1. **User A** selects "Create Pair". The app generates an EC key pair, registers anonymously on the backend, and receives a 6-digit pair code (valid for 24 hours).
+2. **User B** enters the 6-digit pair code. The app generates an EC key pair, sends its public key to the server, and receives User A's public key.
+3. User A receives User B's public key via FCM or polling, establishing the shared cryptographic channel.
+
+### Sending a Drawing
+1. The user draws on the canvas and taps "Send".
+2. The canvas content is rasterized to a PNG byte array and encrypted locally with AES-256-GCM.
+3. The app requests a presigned S3 upload URL from `/api/drawings/presigned-url`.
+4. The encrypted payload is uploaded directly to S3.
+5. The upload is confirmed with the backend (`POST /api/drawings/confirm`) alongside the random IV.
+6. The backend dispatches an FCM `NEW_DRAWING` data message to the partner.
+
+### Receiving a Drawing
+1. `PushNotificationService` intercepts the `NEW_DRAWING` push event under a background wake lock.
+2. The service queries `/api/drawings`, downloads the encrypted image from S3, and decrypts the payload with ECDH + AES-GCM.
+3. The decrypted image is written to widget cache, the Glance widget state is updated, and the in-app UI is notified via `DrawingUpdateBus`.
+
+---
+
+## Setup and Configuration
+
+### Requirements
+* Android Studio Ladybug or newer
+* JDK 21
+* Android SDK 36 (minSdk 28)
+
+### Configuration
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:Bondpl/LoveLetter.git
+   ```
+2. Create or update `local.properties` in the project root:
+   ```properties
+   MY_EU_SERVER_URL=https://your-backend-url.run.app
+   MY_API_KEY=your_optional_api_key
+   ```
+3. Place your `google-services.json` file inside the `app/` directory for Firebase Cloud Messaging support.
+4. Build and install:
+   ```bash
+   ./gradlew assembleDebug
+   ```
