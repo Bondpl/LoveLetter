@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter.di
 
 import android.content.Context
 import com.example.loveletter.data.network.LoveLetterApiService

@@ -1,9 +1,9 @@
-package com.example.loveletter
+package com.example.loveletter.notification
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import androidx.core.app.ActivityCompat
-import android.Manifest
 import com.google.firebase.messaging.FirebaseMessaging
 
 class FCMTokenManager(private val context: Context) {
@@ -31,4 +31,3 @@ class FCMTokenManager(private val context: Context) {
         }
     }
 }
-

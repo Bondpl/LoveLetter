@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter.ui.drawing
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,22 +48,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.loveletter.R
 
 @Composable
 fun ColumnScope.CanvasControls(
     selectedColor: Color,
     colors: List<Color>,
+    brushThickness: Float,
     onSelectColor: (Color) -> Unit,
     onClearCanvas: () -> Unit,
-    onSendAction: () -> Unit = {},
-    onUndo: () -> Unit = {},
+    onSendAction: () -> Unit,
+    onUndo: () -> Unit,
+    modifier: Modifier = Modifier,
     onFill: (Color) -> Unit = {},
     onSetBrushType: (BrushType) -> Unit = {},
     onSetBrushLevel: (Int) -> Unit = {},
-    brushThickness: Float,
     currentBrushType: BrushType = BrushType.MARKER,
-    isSending: Boolean = false,
-    modifier: Modifier = Modifier
+    isSending: Boolean = false
 ) {
     val scrollState = rememberScrollState()
     var showOptions by remember { mutableStateOf(false) }
@@ -84,10 +85,9 @@ fun ColumnScope.CanvasControls(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(vertical = 10.dp, horizontal = 12.dp)
         ) {
-            // 1. Color Palette Row
+            // 1. Color picker row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,12 +100,12 @@ fun ColumnScope.CanvasControls(
                     val isSelected = color == selectedColor
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(color)
                             .border(
                                 width = if (isSelected) 3.dp else 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.6f),
                                 shape = CircleShape
                             )
                             .clickable { onSelectColor(color) },
@@ -114,45 +114,41 @@ fun ColumnScope.CanvasControls(
                         if (isSelected) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        if (color == Color.White) Color.Black else Color.White
-                                    )
+                                    .background(if (color == Color.White) Color.Black else Color.White)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 2. Brush Sizes, Pen Style & Fill Tool Row
+            // 2. Brush sizes, pen style, and fill
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Brush sizes 1..4 with visual highlight
+                // Brush sizes
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val penIcons = listOf(
+                    val sizes = listOf(
                         1 to R.drawable.outline_pen_size_1_24,
                         2 to R.drawable.outline_pen_size_2_24,
                         3 to R.drawable.outline_pen_size_3_24,
                         4 to R.drawable.outline_pen_size_4_24
                     )
-                    for ((lvl, iconRes) in penIcons) {
-                        val isLevelSelected = currentLevel == lvl
-                        if (isLevelSelected) {
+                    for ((level, iconRes) in sizes) {
+                        val isCurrentSize = currentLevel == level
+                        if (isCurrentSize) {
                             FilledIconButton(
-                                onClick = { onSetBrushLevel(lvl) },
+                                onClick = { onSetBrushLevel(level) },
                                 modifier = Modifier.size(38.dp),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = CircleShape,
                                 colors = IconButtonDefaults.filledIconButtonColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -160,67 +156,60 @@ fun ColumnScope.CanvasControls(
                             ) {
                                 Icon(
                                     painter = painterResource(id = iconRes),
-                                    contentDescription = "Size $lvl",
+                                    contentDescription = "Size $level",
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
                         } else {
                             IconButton(
-                                onClick = { onSetBrushLevel(lvl) },
+                                onClick = { onSetBrushLevel(level) },
                                 modifier = Modifier.size(38.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(id = iconRes),
-                                    contentDescription = "Size $lvl",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentDescription = "Size $level",
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
                     }
                 }
 
-                // Pen style dropdown / selector button
-                val brushLabel = when (currentBrushType) {
-                    BrushType.MARKER, BrushType.CONTINUOUS -> "Marker"
+                // Brush Type / Style Button with active name
+                val currentStyleName = when (currentBrushType) {
+                    BrushType.MARKER -> "Marker"
                     BrushType.DASHED -> "Dashed"
                     BrushType.HIGHLIGHTER -> "Highlighter"
-                }
-                FilledTonalButton(
-                    onClick = { showOptions = true },
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(36.dp)
-                ) {
-                    Text(
-                        text = brushLabel,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    BrushType.CONTINUOUS -> "Marker"
                 }
 
-                // Dedicated Fill Background tool
+                FilledTonalButton(
+                    onClick = { showOptions = true },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(text = currentStyleName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                // Fill Canvas Button
                 FilledTonalIconButton(
                     onClick = { onFill(selectedColor) },
                     modifier = Modifier.size(38.dp),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = CircleShape
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_format_paint_24),
-                        contentDescription = "Fill Canvas Background",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        contentDescription = "Fill Canvas",
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 3. Actions Row: Undo, Clear, and Send Drawing
+            // 3. Undo, Clear, and Send actions
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

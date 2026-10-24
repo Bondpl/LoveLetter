@@ -1,11 +1,11 @@
-package com.example.loveletter.ui
+package com.example.loveletter.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.loveletter.NetworkModule
 import com.example.loveletter.data.repository.AuthRepository
 import com.example.loveletter.data.storage.AuthState
 import com.example.loveletter.data.storage.SessionManager
+import com.example.loveletter.di.NetworkModule
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,42 +54,54 @@ class AuthViewModel : ViewModel() {
             _isLoading.value = true
             _errorMessage.value = null
             val result = authRepository.createPair()
-            result.onFailure {
-                _errorMessage.value = it.message ?: "Failed to create pair"
-            }
             _isLoading.value = false
+            result.onFailure { error ->
+                _errorMessage.value = error.message ?: "Failed to create pair"
+            }
         }
     }
 
     fun joinPair(pairCode: String) {
+        val trimmed = pairCode.trim()
+        if (trimmed.length != 6) {
+            _errorMessage.value = "Pair code must be 6 digits"
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            val result = authRepository.joinPair(pairCode)
-            result.onFailure {
-                _errorMessage.value = it.message ?: "Failed to join pair"
-            }
+            val result = authRepository.joinPair(trimmed)
             _isLoading.value = false
+            result.onFailure { error ->
+                _errorMessage.value = error.message ?: "Failed to join pair"
+            }
+        }
+    }
+
+    fun cancelWaiting() {
+        stopPolling()
+        viewModelScope.launch {
+            authRepository.leavePair()
         }
     }
 
     fun leavePair() {
+        stopPolling()
         viewModelScope.launch {
-            _isLoading.value = true
-            stopPolling()
             authRepository.leavePair()
-            _isLoading.value = false
         }
     }
 
     private fun startWaitingPolling() {
-        stopPolling()
+        if (pollingJob?.isActive == true) return
         pollingJob = viewModelScope.launch {
             while (isActive) {
                 delay(3000)
-                val result = authRepository.checkPairStatus()
-                if (result.isSuccess && result.getOrNull()?.isPaired == true) {
-                    break
+                try {
+                    authRepository.checkPairStatus()
+                } catch (_: Exception) {
+                    // Suppress polling network errors
                 }
             }
         }

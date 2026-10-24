@@ -18,7 +18,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.LoveLetter"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -29,7 +28,7 @@
         </activity>
 
         <receiver
-            android:name="com.example.loveletter.LoveLetterWidgetReceiver"
+            android:name="com.example.loveletter.widget.LoveLetterWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -39,7 +38,7 @@
                 android:resource="@xml/my_widget_info" />
         </receiver>
         <service
-            android:name=".PushNotificationService"
+            android:name=".notification.PushNotificationService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

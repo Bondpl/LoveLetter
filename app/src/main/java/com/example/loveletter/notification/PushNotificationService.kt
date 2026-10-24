@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.example.loveletter.MainActivity
+import com.example.loveletter.R
+import com.example.loveletter.di.NetworkModule
+import com.example.loveletter.widget.LoveLetterWidget
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.Dispatchers
@@ -51,13 +55,13 @@ class PushNotificationService : FirebaseMessagingService() {
 
             "PAIR_DISCONNECTED" -> {
                 val title = dataTitle ?: "LoveLetter"
-                val body = dataBody ?: "Your partner has left the pair 💔"
+                val body = dataBody ?: "Your partner has left the pair"
                 sendNotification(title = title, body = body, data = remoteMessage.data)
 
                 // Reset local state, session and widget synchronously while service is active
                 runBlocking(Dispatchers.IO) {
                     val sessionManager = NetworkModule.getSessionManager(applicationContext)
-                    sessionManager.clearSession("Your partner has disconnected the pair 💔")
+                    sessionManager.clearSession("Your partner has disconnected the pair")
                     LoveLetterWidget.clearWidgetSuspend(applicationContext)
                     DrawingUpdateBus.clear()
                 }
@@ -129,17 +133,15 @@ class PushNotificationService : FirebaseMessagingService() {
     }
 
     private fun createNotificationChannel() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "LoveLetter Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            channel.description = "Love Letter pair & drawing notifications"
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "LoveLetter Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        channel.description = "Love Letter pair & drawing notifications"
 
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     companion object {

@@ -1,4 +1,4 @@
-package com.example.loveletter.ui
+package com.example.loveletter.ui.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -43,7 +43,7 @@ fun AuthScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "💌 LoveLetter",
+            text = "LoveLetter",
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -53,49 +53,19 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Exchange encrypted handwritten notes & drawings with your favorite person.",
+            text = "Draw and exchange encrypted love letters with your partner on your home screen.",
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(36.dp))
 
-        if (!errorMessage.isNullOrBlank()) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(onClick = onClearError) {
-                        Text("Dismiss", color = MaterialTheme.colorScheme.onErrorContainer)
-                    }
-                }
-            }
-        }
-
-        // Section 1: Create a new pair
-        ElevatedCard(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(
                 modifier = Modifier
@@ -104,18 +74,23 @@ fun AuthScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "New Here?",
+                    text = "Start a New Pair",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+
                 Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
-                    text = "Start a fresh pair and invite your partner with a 6-digit code.",
+                    text = "Generate a pair code to share with your partner.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
+
                 Button(
                     onClick = onCreatePair,
                     enabled = !isLoading,
@@ -126,41 +101,42 @@ fun AuthScreen(
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
                             modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Create New Pair", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Create Pair Code", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Divider
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            HorizontalDivider(modifier = Modifier.weight(1f))
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             Text(
                 text = "OR",
                 modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outline,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            HorizontalDivider(modifier = Modifier.weight(1f))
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Section 2: Join an existing pair
-        ElevatedCard(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(
                 modifier = Modifier
@@ -169,29 +145,35 @@ fun AuthScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Have a Pair Code?",
+                    text = "Join Partner's Pair",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+
                 Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
-                    text = "Enter the 6-digit code your partner shared with you (codes expire after 10min).",
+                    text = "Enter the 6-digit code received from your partner.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = pairCodeInput,
-                    onValueChange = {
-                        if (it.length <= 6 && it.all { char -> char.isDigit() }) {
-                            pairCodeInput = it
+                    onValueChange = { input ->
+                        val filtered = input.filter { it.isDigit() }
+                        if (filtered.length <= 6) {
+                            pairCodeInput = filtered
+                            onClearError()
                         }
                     },
-                    label = { Text("6-digit code") },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("6-Digit Pair Code") },
                     singleLine = true,
-                    enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -204,8 +186,14 @@ fun AuthScreen(
                             }
                         }
                     ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = TextAlign.Center,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 6.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -223,14 +211,33 @@ fun AuthScreen(
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
                             modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Join Pair", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text("Connect", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
+            }
+        }
+
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
-package com.example.loveletter
+package com.example.loveletter.data.storage
 
 import android.content.Context
+import com.example.loveletter.ui.drawing.DrawingState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString

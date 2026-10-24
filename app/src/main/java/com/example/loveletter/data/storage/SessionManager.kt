@@ -2,7 +2,7 @@ package com.example.loveletter.data.storage
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.loveletter.LoveLetterWidget
+import com.example.loveletter.widget.LoveLetterWidget
 import com.example.loveletter.data.crypto.CryptoManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

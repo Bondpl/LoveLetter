@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter.notification
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -12,6 +12,7 @@ object DrawingUpdateBus {
         _drawingUpdates.tryEmit(imageBytes)
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun clear() {
         _drawingUpdates.resetReplayCache()
     }

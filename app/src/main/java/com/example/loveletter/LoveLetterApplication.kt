@@ -2,6 +2,7 @@ package com.example.loveletter
 
 import android.app.Application
 import com.example.loveletter.data.storage.SessionManager
+import com.example.loveletter.di.NetworkModule
 
 class LoveLetterApplication : Application() {
     lateinit var sessionManager: SessionManager

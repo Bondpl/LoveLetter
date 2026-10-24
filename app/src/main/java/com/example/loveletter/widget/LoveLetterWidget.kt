@@ -1,4 +1,4 @@
-package com.example.loveletter
+package com.example.loveletter.widget
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -31,6 +31,7 @@ import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.example.loveletter.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,7 +65,7 @@ class LoveLetterWidget : GlanceAppWidget() {
                     )
                 } else {
                     Text(
-                        text = "Waiting on a letter... 💌",
+                        text = "Waiting on a letter...",
                         style = TextStyle(color = ColorProvider(day = Color(0xFF1C1B1F), night = Color(0xFFE6E1E5)))
                     )
                 }

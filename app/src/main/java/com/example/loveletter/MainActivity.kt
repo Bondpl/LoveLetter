@@ -32,10 +32,21 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.loveletter.data.storage.AuthState
-import com.example.loveletter.ui.AuthScreen
-import com.example.loveletter.ui.AuthViewModel
-import com.example.loveletter.ui.WaitingScreen
+import com.example.loveletter.data.storage.CanvasStorage
+import com.example.loveletter.di.NetworkModule
+import com.example.loveletter.notification.DrawingUpdateBus
+import com.example.loveletter.notification.FCMTokenManager
+import com.example.loveletter.ui.auth.AuthScreen
+import com.example.loveletter.ui.auth.AuthViewModel
+import com.example.loveletter.ui.auth.WaitingScreen
+import com.example.loveletter.ui.drawing.CanvasControls
+import com.example.loveletter.ui.drawing.DrawingAction
+import com.example.loveletter.ui.drawing.DrawingCanvas
+import com.example.loveletter.ui.drawing.DrawingViewModel
+import com.example.loveletter.ui.drawing.flattenedColors
 import com.example.loveletter.ui.theme.LoveLetterTheme
+import com.example.loveletter.util.toPngByteArray
+import com.example.loveletter.widget.LoveLetterWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -98,7 +109,6 @@ class MainActivity : ComponentActivity() {
                         is AuthState.WaitingForPartner -> {
                             WaitingScreen(
                                 pairCode = state.pairCode,
-                                isLoading = isAuthLoading,
                                 onCancelPair = {
                                     drawingViewModel.clearAll(this@MainActivity)
                                     authViewModel.leavePair()
