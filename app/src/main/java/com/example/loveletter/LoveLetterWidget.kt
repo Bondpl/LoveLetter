@@ -63,7 +63,10 @@ class LoveLetterWidget : GlanceAppWidget() {
     private fun loadWidgetBitmap(context: Context): Bitmap? {
         return try {
             val file = File(context.filesDir, WIDGET_IMAGE_FILE)
-            if (!file.exists()) return null
+            if (!file.exists()) {
+                Log.d("LoveLetterWidget", "loadWidgetBitmap: $WIDGET_IMAGE_FILE does not exist")
+                return null
+            }
 
             // First decode with inJustDecodeBounds to check dimensions
             val options = BitmapFactory.Options().apply {
@@ -85,7 +88,7 @@ class LoveLetterWidget : GlanceAppWidget() {
 
             val sampled = BitmapFactory.decodeFile(file.absolutePath, decodeOptions) ?: return null
 
-            if (sampled.width > maxDim || sampled.height > maxDim) {
+            val resultBitmap = if (sampled.width > maxDim || sampled.height > maxDim) {
                 val ratio = minOf(maxDim.toFloat() / sampled.width, maxDim.toFloat() / sampled.height)
                 val targetW = (sampled.width * ratio).toInt()
                 val targetH = (sampled.height * ratio).toInt()
@@ -93,6 +96,8 @@ class LoveLetterWidget : GlanceAppWidget() {
             } else {
                 sampled
             }
+            Log.d("LoveLetterWidget", "loadWidgetBitmap: loaded bitmap ${resultBitmap.width}x${resultBitmap.height}")
+            resultBitmap
         } catch (e: Exception) {
             Log.e("LoveLetterWidget", "Error decoding widget bitmap", e)
             null
@@ -105,15 +110,21 @@ class LoveLetterWidget : GlanceAppWidget() {
         fun updateWidgetImage(context: Context, imageBytes: ByteArray) {
             try {
                 val file = File(context.filesDir, WIDGET_IMAGE_FILE)
-                file.writeBytes(imageBytes)
+                val tmp = File(context.filesDir, "$WIDGET_IMAGE_FILE.tmp")
+                tmp.writeBytes(imageBytes)
+                if (file.exists()) file.delete()
+                tmp.renameTo(file)
+                Log.d("LoveLetterWidget", "Saved $WIDGET_IMAGE_FILE, size=${imageBytes.size}")
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("LoveLetterWidget", "Failed to write widget image file", e)
             }
-            CoroutineScope(Dispatchers.Main).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 try {
+                    Log.d("LoveLetterWidget", "Calling LoveLetterWidget().updateAll(context)...")
                     LoveLetterWidget().updateAll(context)
+                    Log.d("LoveLetterWidget", "updateAll(context) completed successfully")
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("LoveLetterWidget", "Error updating widget in updateWidgetImage", e)
                 }
             }
         }

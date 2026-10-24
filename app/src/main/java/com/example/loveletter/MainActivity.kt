@@ -185,11 +185,8 @@ fun DrawingMainScreen(
     }
 
     LaunchedEffect(downloadedImage) {
-        val bytes = downloadedImage
-        if (bytes != null) {
+        downloadedImage?.let { bytes ->
             LoveLetterWidget.updateWidgetImage(context, bytes)
-        } else {
-            LoveLetterWidget.clearWidget(context)
         }
     }
 
