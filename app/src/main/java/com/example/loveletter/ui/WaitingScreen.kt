@@ -38,7 +38,7 @@ fun WaitingScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "⏳ Waiting for Partner",
+            text = "Waiting for Partner",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -58,7 +58,7 @@ fun WaitingScreen(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "⏳ This code is valid for 10 minutes",
+            text = "This code is valid for 10 minutes",
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary,
