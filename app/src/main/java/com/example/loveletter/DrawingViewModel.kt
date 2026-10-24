@@ -60,15 +60,16 @@ data class DrawingState(
 )
 
 sealed interface DrawingAction {
-    data object OnNewPathStart: DrawingAction
-    data class OnDraw(val offset: Offset): DrawingAction
-    data object OnPathEnd: DrawingAction
-    data class OnSelectColor(val color: Color): DrawingAction
-    data object OnClearCanvasClick: DrawingAction
-    data object OnUndo: DrawingAction
-    data class OnFill(val color: Color): DrawingAction
-    data class OnSetBrushSize(val size: Float): DrawingAction
-    data class OnSetBrushType(val type: BrushType): DrawingAction
+    data class OnNewPathStart(val initialOffset: Offset? = null) : DrawingAction
+    data class OnDraw(val offset: Offset) : DrawingAction
+    data class OnTap(val offset: Offset) : DrawingAction
+    data object OnPathEnd : DrawingAction
+    data class OnSelectColor(val color: Color) : DrawingAction
+    data object OnClearCanvasClick : DrawingAction
+    data object OnUndo : DrawingAction
+    data class OnFill(val color: Color) : DrawingAction
+    data class OnSetBrushSize(val size: Float) : DrawingAction
+    data class OnSetBrushType(val type: BrushType) : DrawingAction
 }
 
 class DrawingViewModel : ViewModel() {
@@ -96,7 +97,16 @@ class DrawingViewModel : ViewModel() {
 
     private val history = mutableListOf<DrawingState>()
 
-    fun getHistory(): List<DrawingState> = history.toList()
+    fun getHistory(): List<DrawingState> = getHistoryToSave()
+
+    fun getHistoryToSave(): List<DrawingState> {
+        val currentState = state.value
+        return if (currentState.paths.isNotEmpty() || currentState.backgroundColor != Color.White) {
+            history + listOf(currentState)
+        } else {
+            history.toList()
+        }
+    }
 
     private fun pushHistory() {
         history.add(state.value.copy(paths = state.value.paths.toList()))
@@ -111,10 +121,11 @@ class DrawingViewModel : ViewModel() {
             }
             DrawingAction.OnUndo -> onUndo()
             is DrawingAction.OnDraw -> onDraw(action.offset)
-            DrawingAction.OnNewPathStart -> {
+            is DrawingAction.OnNewPathStart -> {
                 pushHistory()
-                onNewPathStart()
+                onNewPathStart(action.initialOffset)
             }
+            is DrawingAction.OnTap -> onTap(action.offset)
             DrawingAction.OnPathEnd -> onPathEnd()
             is DrawingAction.OnSelectColor -> onSelectColor(action.color)
             is DrawingAction.OnFill -> {
@@ -154,8 +165,31 @@ class DrawingViewModel : ViewModel() {
         _state.update { it.copy(currentPath = null, paths = it.paths + currentPathData) }
     }
 
-    private fun onNewPathStart() {
-        _state.update { it.copy(currentPath = PathData(id = System.currentTimeMillis().toString(), color = it.selectedColor, path = emptyList(), thickness = it.brushThickness, brushType = it.brushType)) }
+    private fun onNewPathStart(initialOffset: Offset? = null) {
+        val initialPoints = if (initialOffset != null) listOf(initialOffset) else emptyList()
+        _state.update {
+            it.copy(
+                currentPath = PathData(
+                    id = System.currentTimeMillis().toString(),
+                    color = it.selectedColor,
+                    path = initialPoints,
+                    thickness = it.brushThickness,
+                    brushType = it.brushType
+                )
+            )
+        }
+    }
+
+    private fun onTap(offset: Offset) {
+        pushHistory()
+        val tapPath = PathData(
+            id = System.currentTimeMillis().toString(),
+            color = state.value.selectedColor,
+            path = listOf(offset),
+            thickness = state.value.brushThickness,
+            brushType = state.value.brushType
+        )
+        _state.update { it.copy(paths = it.paths + tapPath) }
     }
 
     private fun onDraw(offset: Offset) {
@@ -210,8 +244,26 @@ class DrawingViewModel : ViewModel() {
     }
 
     fun restoreHistory(savedHistory: List<DrawingState>) {
+        if (savedHistory.isEmpty()) return
         history.clear()
-        history.addAll(savedHistory)
+        if (savedHistory.size > 1) {
+            history.addAll(savedHistory.subList(0, savedHistory.size - 1))
+        }
+        _state.value = savedHistory.last()
+    }
+
+    fun loadSavedHistory(context: android.content.Context) {
+        if (_state.value.paths.isNotEmpty()) return
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val loaded = CanvasStorage.loadHistory(context)
+                if (loaded.isNotEmpty()) {
+                    restoreHistory(loaded)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun clearAll(context: android.content.Context) {

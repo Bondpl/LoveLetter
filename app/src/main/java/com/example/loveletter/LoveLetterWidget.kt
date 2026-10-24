@@ -34,6 +34,7 @@ import androidx.glance.text.TextStyle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.max
 
@@ -120,7 +121,7 @@ class LoveLetterWidget : GlanceAppWidget() {
         private val KEY_HAS_DRAWING = booleanPreferencesKey("has_drawing")
         private val KEY_TIMESTAMP = longPreferencesKey("timestamp")
 
-        fun updateWidgetImage(context: Context, imageBytes: ByteArray) {
+        suspend fun updateWidgetImageSuspend(context: Context, imageBytes: ByteArray) = withContext(Dispatchers.IO) {
             try {
                 val file = File(context.filesDir, WIDGET_IMAGE_FILE)
                 file.writeBytes(imageBytes)
@@ -128,27 +129,31 @@ class LoveLetterWidget : GlanceAppWidget() {
             } catch (e: Exception) {
                 Log.e("LoveLetterWidget", "Failed to write widget image file", e)
             }
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val manager = GlanceAppWidgetManager(context)
-                    val glanceIds = manager.getGlanceIds(LoveLetterWidget::class.java)
-                    Log.d("LoveLetterWidget", "Updating ${glanceIds.size} widget instances with new image")
-                    for (glanceId in glanceIds) {
-                        updateAppWidgetState(context, glanceId) { prefs ->
-                            prefs[KEY_HAS_DRAWING] = true
-                            prefs[KEY_TIMESTAMP] = System.currentTimeMillis()
-                        }
-                        LoveLetterWidget().update(context, glanceId)
+            try {
+                val manager = GlanceAppWidgetManager(context)
+                val glanceIds = manager.getGlanceIds(LoveLetterWidget::class.java)
+                Log.d("LoveLetterWidget", "Updating ${glanceIds.size} widget instances with new image")
+                for (glanceId in glanceIds) {
+                    updateAppWidgetState(context, glanceId) { prefs ->
+                        prefs[KEY_HAS_DRAWING] = true
+                        prefs[KEY_TIMESTAMP] = System.currentTimeMillis()
                     }
-                    LoveLetterWidget().updateAll(context)
-                    Log.d("LoveLetterWidget", "Widget update completed")
-                } catch (e: Exception) {
-                    Log.e("LoveLetterWidget", "Error updating widget in updateWidgetImage", e)
+                    LoveLetterWidget().update(context, glanceId)
                 }
+                LoveLetterWidget().updateAll(context)
+                Log.d("LoveLetterWidget", "Widget update completed")
+            } catch (e: Exception) {
+                Log.e("LoveLetterWidget", "Error updating widget in updateWidgetImageSuspend", e)
             }
         }
 
-        fun clearWidget(context: Context) {
+        fun updateWidgetImage(context: Context, imageBytes: ByteArray) {
+            CoroutineScope(Dispatchers.IO).launch {
+                updateWidgetImageSuspend(context, imageBytes)
+            }
+        }
+
+        suspend fun clearWidgetSuspend(context: Context) = withContext(Dispatchers.IO) {
             try {
                 val file = File(context.filesDir, WIDGET_IMAGE_FILE)
                 if (file.exists()) {
@@ -158,23 +163,27 @@ class LoveLetterWidget : GlanceAppWidget() {
             } catch (e: Exception) {
                 Log.e("LoveLetterWidget", "Failed to delete widget image", e)
             }
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val manager = GlanceAppWidgetManager(context)
-                    val glanceIds = manager.getGlanceIds(LoveLetterWidget::class.java)
-                    Log.d("LoveLetterWidget", "Clearing ${glanceIds.size} widget instances")
-                    for (glanceId in glanceIds) {
-                        updateAppWidgetState(context, glanceId) { prefs ->
-                            prefs[KEY_HAS_DRAWING] = false
-                            prefs[KEY_TIMESTAMP] = System.currentTimeMillis()
-                        }
-                        LoveLetterWidget().update(context, glanceId)
+            try {
+                val manager = GlanceAppWidgetManager(context)
+                val glanceIds = manager.getGlanceIds(LoveLetterWidget::class.java)
+                Log.d("LoveLetterWidget", "Clearing ${glanceIds.size} widget instances")
+                for (glanceId in glanceIds) {
+                    updateAppWidgetState(context, glanceId) { prefs ->
+                        prefs[KEY_HAS_DRAWING] = false
+                        prefs[KEY_TIMESTAMP] = System.currentTimeMillis()
                     }
-                    LoveLetterWidget().updateAll(context)
-                    Log.d("LoveLetterWidget", "Widget clear completed")
-                } catch (e: Exception) {
-                    Log.e("LoveLetterWidget", "Failed to update widget after clearing", e)
+                    LoveLetterWidget().update(context, glanceId)
                 }
+                LoveLetterWidget().updateAll(context)
+                Log.d("LoveLetterWidget", "Widget clear completed")
+            } catch (e: Exception) {
+                Log.e("LoveLetterWidget", "Failed to update widget after clearing", e)
+            }
+        }
+
+        fun clearWidget(context: Context) {
+            CoroutineScope(Dispatchers.IO).launch {
+                clearWidgetSuspend(context)
             }
         }
     }

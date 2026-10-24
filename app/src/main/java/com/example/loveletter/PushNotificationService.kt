@@ -9,9 +9,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class PushNotificationService : FirebaseMessagingService() {
 
@@ -28,14 +27,15 @@ class PushNotificationService : FirebaseMessagingService() {
                 val body = dataBody ?: "Your partner sent you a drawing!"
                 sendNotification(title = title, body = body, data = remoteMessage.data)
 
-                CoroutineScope(Dispatchers.IO).launch {
+                // Run blocking to hold Firebase WakeLock while downloading, decrypting and updating widget
+                runBlocking(Dispatchers.IO) {
                     try {
                         val repository = NetworkModule.getDrawingRepository(applicationContext)
                         val result = repository.getLatestDrawing()
                         result.onSuccess { imageBytes ->
                             if (imageBytes != null) {
                                 Log.d("PushService", "Downloaded and decrypted drawing, size=${imageBytes.size}")
-                                LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
+                                LoveLetterWidget.updateWidgetImageSuspend(applicationContext, imageBytes)
                                 DrawingUpdateBus.notifyNewDrawing(imageBytes)
                             } else {
                                 Log.d("PushService", "No new drawing found")
@@ -54,11 +54,13 @@ class PushNotificationService : FirebaseMessagingService() {
                 val body = dataBody ?: "Your partner has left the pair 💔"
                 sendNotification(title = title, body = body, data = remoteMessage.data)
 
-                // 2. Reset local state, session and widget
-                val sessionManager = NetworkModule.getSessionManager(applicationContext)
-                sessionManager.clearSession("Your partner has disconnected the pair 💔")
-                LoveLetterWidget.clearWidget(applicationContext)
-                DrawingUpdateBus.clear()
+                // Reset local state, session and widget synchronously while service is active
+                runBlocking(Dispatchers.IO) {
+                    val sessionManager = NetworkModule.getSessionManager(applicationContext)
+                    sessionManager.clearSession("Your partner has disconnected the pair 💔")
+                    LoveLetterWidget.clearWidgetSuspend(applicationContext)
+                    DrawingUpdateBus.clear()
+                }
             }
 
             else -> {
@@ -67,13 +69,13 @@ class PushNotificationService : FirebaseMessagingService() {
                 sendNotification(title = title, body = body, data = remoteMessage.data)
 
                 if (remoteMessage.data.isNotEmpty()) {
-                    CoroutineScope(Dispatchers.IO).launch {
+                    runBlocking(Dispatchers.IO) {
                         try {
                             val repository = NetworkModule.getDrawingRepository(applicationContext)
                             val result = repository.getLatestDrawing()
                             result.onSuccess { imageBytes ->
                                 if (imageBytes != null) {
-                                    LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
+                                    LoveLetterWidget.updateWidgetImageSuspend(applicationContext, imageBytes)
                                     DrawingUpdateBus.notifyNewDrawing(imageBytes)
                                 }
                             }
@@ -86,7 +88,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        CoroutineScope(Dispatchers.IO).launch {
+        runBlocking(Dispatchers.IO) {
             try {
                 NetworkModule.getAuthRepository(applicationContext).updateFcmToken(token)
                 Log.d("FCM", "FCM token updated successfully onNewToken")
@@ -116,7 +118,7 @@ class PushNotificationService : FirebaseMessagingService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

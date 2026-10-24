@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
         if (authViewModel.authState.value is AuthState.Paired) {
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
-                    CanvasStorage.saveHistory(this@MainActivity, drawingViewModel.getHistory())
+                    CanvasStorage.saveHistory(this@MainActivity, drawingViewModel.getHistoryToSave())
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -142,7 +142,9 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch {
                 try {
                     val loaded = CanvasStorage.loadHistory(this@MainActivity)
-                    drawingViewModel.restoreHistory(loaded)
+                    if (loaded.isNotEmpty()) {
+                        drawingViewModel.restoreHistory(loaded)
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -180,6 +182,7 @@ fun DrawingMainScreen(
     }
 
     LaunchedEffect(Unit) {
+        drawingViewModel.loadSavedHistory(context)
         drawingViewModel.loadCachedImage(context)
         drawingViewModel.fetchLatestDrawing()
     }
