@@ -55,7 +55,17 @@ fun WaitingScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "⏳ This code is valid for 24 hours",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Code Display Card
         Surface(

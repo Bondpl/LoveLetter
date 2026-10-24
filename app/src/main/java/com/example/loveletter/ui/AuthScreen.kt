@@ -175,7 +175,7 @@ fun AuthScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Enter the 6-digit code your partner shared with you.",
+                    text = "Enter the 6-digit code your partner shared with you (codes expire after 24h).",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center

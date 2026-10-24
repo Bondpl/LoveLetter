@@ -19,33 +19,66 @@ class PushNotificationService : FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
 
         val type = remoteMessage.data["type"]
-        val title = remoteMessage.data["title"]
-            ?: remoteMessage.notification?.title
-            ?: "New Drawing"
-        val body = remoteMessage.data["body"]
-            ?: remoteMessage.notification?.body
-            ?: "Your partner sent you a drawing!"
+        val dataTitle = remoteMessage.data["title"] ?: remoteMessage.notification?.title
+        val dataBody = remoteMessage.data["body"] ?: remoteMessage.notification?.body
 
-        sendNotification(title = title, body = body, data = remoteMessage.data)
+        when (type) {
+            "NEW_DRAWING" -> {
+                val title = dataTitle ?: "New Drawing"
+                val body = dataBody ?: "Your partner sent you a drawing!"
+                sendNotification(title = title, body = body, data = remoteMessage.data)
 
-        if (type == "NEW_DRAWING" || remoteMessage.data.isNotEmpty()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val repository = NetworkModule.getDrawingRepository(applicationContext)
-                    val result = repository.getLatestDrawing()
-                    result.onSuccess { imageBytes ->
-                        if (imageBytes != null) {
-                            Log.d("PushService", "Downloaded and decrypted drawing, size=${imageBytes.size}")
-                            LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
-                            DrawingUpdateBus.notifyNewDrawing(imageBytes)
-                        } else {
-                            Log.d("PushService", "No new drawing found")
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val repository = NetworkModule.getDrawingRepository(applicationContext)
+                        val result = repository.getLatestDrawing()
+                        result.onSuccess { imageBytes ->
+                            if (imageBytes != null) {
+                                Log.d("PushService", "Downloaded and decrypted drawing, size=${imageBytes.size}")
+                                LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
+                                DrawingUpdateBus.notifyNewDrawing(imageBytes)
+                            } else {
+                                Log.d("PushService", "No new drawing found")
+                            }
+                        }.onFailure { error ->
+                            Log.e("PushService", "Error downloading/decrypting drawing", error)
                         }
-                    }.onFailure { error ->
-                        Log.e("PushService", "Error downloading/decrypting drawing", error)
+                    } catch (e: Exception) {
+                        Log.e("PushService", "Failed to fetch/update image", e)
                     }
-                } catch (e: Exception) {
-                    Log.e("PushService", "Failed to fetch/update image", e)
+                }
+            }
+
+            "PAIR_DISCONNECTED" -> {
+                val title = dataTitle ?: "LoveLetter"
+                val body = dataBody ?: "Your partner has left the pair 💔"
+                sendNotification(title = title, body = body, data = remoteMessage.data)
+
+                // 2. Reset local state, session and widget
+                val sessionManager = NetworkModule.getSessionManager(applicationContext)
+                sessionManager.clearSession("Your partner has disconnected the pair 💔")
+                LoveLetterWidget.clearWidget(applicationContext)
+                DrawingUpdateBus.clear()
+            }
+
+            else -> {
+                val title = dataTitle ?: "LoveLetter"
+                val body = dataBody ?: "You have a new update!"
+                sendNotification(title = title, body = body, data = remoteMessage.data)
+
+                if (remoteMessage.data.isNotEmpty()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val repository = NetworkModule.getDrawingRepository(applicationContext)
+                            val result = repository.getLatestDrawing()
+                            result.onSuccess { imageBytes ->
+                                if (imageBytes != null) {
+                                    LoveLetterWidget.updateWidgetImage(applicationContext, imageBytes)
+                                    DrawingUpdateBus.notifyNewDrawing(imageBytes)
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
                 }
             }
         }
@@ -83,23 +116,24 @@ class PushNotificationService : FirebaseMessagingService() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .build()
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
 
     private fun createNotificationChannel() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Love Letter Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
+                "LoveLetter Alerts",
+                NotificationManager.IMPORTANCE_HIGH
             )
-            channel.description = "Love Letter Notifications"
+            channel.description = "Love Letter pair & drawing notifications"
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
