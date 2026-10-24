@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     id("com.google.gms.google-services")
 }
 
@@ -54,6 +55,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.ui)
     testImplementation(libs.junit)
@@ -73,5 +75,5 @@ dependencies {
     implementation(libs.okhttp)
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation(libs.firebase.messaging)
-    implementation("com.google.code.gson:gson:2.14.0")
+    implementation(libs.kotlinx.serialization.json)
 }

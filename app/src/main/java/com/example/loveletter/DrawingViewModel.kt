@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class BrushType { DASHED, CONTINUOUS, MARKER, HIGHLIGHTER }
 
 val flattenedColors = listOf(
@@ -34,18 +36,23 @@ val flattenedColors = listOf(
     Color(0xFF123456)  // sentinel -> tools icon
 )
 
+@Serializable
 data class PathData(
     val id: String,
+    @Serializable(with = ColorSerializer::class)
     val color: Color,
-    val path: List<Offset>,
+    val path: List<@Serializable(with = OffsetSerializer::class) Offset>,
     val thickness: Float = 20f,
     val brushType: BrushType = BrushType.MARKER
 )
 
+@Serializable
 data class DrawingState(
+    @Serializable(with = ColorSerializer::class)
     val selectedColor: Color = Color(0xFF000000),
     val currentPath: PathData? = null,
     val paths: List<PathData> = emptyList(),
+    @Serializable(with = ColorSerializer::class)
     val backgroundColor: Color = Color.White,
     val brushThickness: Float = 20f,
     val brushType: BrushType = BrushType.MARKER
@@ -165,4 +172,3 @@ class DrawingViewModel: ViewModel() {
         history.addAll(savedHistory)
     }
 }
-
