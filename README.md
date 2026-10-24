@@ -6,13 +6,13 @@
 <p align="center">
   <img width="260" alt="Love Letter Canvas Screen" src="https://github.com/user-attachments/assets/6b376d23-d997-4898-9aa2-b7caf65c25c5" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img width="260" alt="Love Letter Widget" src="https://github.com/user-attachments/assets/e41cf902-da13-4e3f-8a30-a58bbfbe36db" />
+  <img width="260" alt="Love Letter Widget" src="https://github.com/user-attachments/assets/1008b6c1-55df-4362-bea1-eecc6d5f18e7" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img width="260" alt="Screenshot_20261024_204056" src="https://github.com/user-attachments/assets/3ba80edc-f62f-46bb-81ab-562d02bcd971" />
-
+  <img width="260" alt="Screenshot_20261024_204056" src="https://github.com/user-attachments/assets/3de5b3dd-248b-4152-8729-e95a04269eef" />
 </p>
 
 ---
+
 
 ## Overview
 
