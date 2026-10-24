@@ -58,7 +58,7 @@ fun WaitingScreen(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "⏳ This code is valid for 24 hours",
+            text = "⏳ This code is valid for 10 minutes",
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary,

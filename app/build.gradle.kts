@@ -15,7 +15,6 @@ val localProperties = Properties().apply {
 }
 
 val serverUrl = localProperties.getProperty("MY_EU_SERVER_URL") ?: "https://api.your-domain.com"
-val apiKey = localProperties.getProperty("MY_API_KEY") ?: "DEBUG_API_KEY"
 
 android {
     namespace = "com.example.loveletter"
@@ -34,17 +33,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
-        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
         getByName("release") {
             optimization {
                 enable = false
-            }
-            val prodApiKey = System.getenv("PRODUCTION_API_KEY")
-            if (!prodApiKey.isNullOrBlank()) {
-                buildConfigField("String", "API_KEY", "\"$prodApiKey\"")
             }
         }
     }

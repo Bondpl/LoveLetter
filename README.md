@@ -25,7 +25,7 @@ When a user finishes a drawing and sends it, the backend dispatches a silent pus
 ## Key Features
 
 * **Home Screen Widget:** Built with Jetpack Glance, rendering the latest received partner drawing on the Android launcher with automatic resizing and session state awareness.
-* **End-to-End Encryption (E2EE):** Drawings are encrypted on the sender's device using AES-256-GCM. The encryption key is derived via Elliptic Curve Diffie-Hellman (ECDH) on the `secp256r1` curve. Neither the backend server nor cloud storage can access the plaintext drawings.
+* **End-to-End Encryption (E2EE):** Drawings are encrypted on the sender's device using AES-256-GCM. Neither the backend server nor cloud storage can access the plaintext drawings.
 * **Background Push Synchronization:** Silent Firebase Cloud Messaging (FCM) data messages wake the recipient's phone under system WakeLock guarantees to download, decrypt, and update the widget immediately.
 * **Drawing Canvas:** Full-screen vector drawing canvas featuring:
   * Multi-color palette with active selection highlighting and canvas-matching pure white.
@@ -36,7 +36,7 @@ When a user finishes a drawing and sends it, the backend dispatches a silent pus
   * Automatic state caching across application pauses and process recreation.
   * Hardware-accelerated path caching for smooth 60-120 FPS rendering.
 * **Secure Pairing System:**
-  * 6-digit invitation codes valid for 24 hours.
+  * 6-digit invitation codes valid for 10 minutes.
   * Public key exchange during pairing.
   * Real-time disconnect alerts (`PAIR_DISCONNECTED`) that clear the session, history, and home screen widget on both devices instantly.
   * Automatic cleanup of expired drawings on storage.
@@ -74,28 +74,6 @@ The application implements zero-knowledge end-to-end encryption for all drawings
 
 ---
 
-## How It Works
-
-### Pairing
-1. **User A** selects "Create Pair". The app generates an EC key pair, registers anonymously on the backend, and receives a 6-digit pair code (valid for 24 hours).
-2. **User B** enters the 6-digit pair code. The app generates an EC key pair, sends its public key to the server, and receives User A's public key.
-3. User A receives User B's public key via FCM or polling, establishing the shared cryptographic channel.
-
-### Sending a Drawing
-1. The user draws on the canvas and taps "Send".
-2. The canvas content is rasterized to a PNG byte array and encrypted locally with AES-256-GCM.
-3. The app requests a presigned S3 upload URL from `/api/drawings/presigned-url`.
-4. The encrypted payload is uploaded directly to S3.
-5. The upload is confirmed with the backend (`POST /api/drawings/confirm`) alongside the random IV.
-6. The backend dispatches an FCM `NEW_DRAWING` data message to the partner.
-
-### Receiving a Drawing
-1. `PushNotificationService` intercepts the `NEW_DRAWING` push event under a background wake lock.
-2. The service queries `/api/drawings`, downloads the encrypted image from S3, and decrypts the payload with ECDH + AES-GCM.
-3. The decrypted image is written to widget cache, the Glance widget state is updated, and the in-app UI is notified via `DrawingUpdateBus`.
-
----
-
 ## Setup and Configuration
 
 ### Requirements
@@ -111,7 +89,6 @@ The application implements zero-knowledge end-to-end encryption for all drawings
 2. Create or update `local.properties` in the project root:
    ```properties
    MY_EU_SERVER_URL=https://your-backend-url.run.app
-   MY_API_KEY=your_optional_api_key
    ```
 3. Place your `google-services.json` file inside the `app/` directory for Firebase Cloud Messaging support.
 4. Build and install:
