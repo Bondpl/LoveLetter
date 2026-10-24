@@ -82,12 +82,6 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun pollStatusOnce() {
-        viewModelScope.launch {
-            authRepository.checkPairStatus()
-        }
-    }
-
     private fun startWaitingPolling() {
         stopPolling()
         pollingJob = viewModelScope.launch {

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 fun WaitingScreen(
     pairCode: String,
     isLoading: Boolean,
-    onCheckStatusNow: () -> Unit,
     onCancelPair: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,12 +124,6 @@ fun WaitingScreen(
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onCheckStatusNow) {
-            Text("Check Status Now")
         }
 
         Spacer(modifier = Modifier.height(32.dp))

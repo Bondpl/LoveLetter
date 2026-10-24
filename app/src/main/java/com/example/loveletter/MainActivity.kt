@@ -99,7 +99,6 @@ class MainActivity : ComponentActivity() {
                             WaitingScreen(
                                 pairCode = state.pairCode,
                                 isLoading = isAuthLoading,
-                                onCheckStatusNow = { authViewModel.pollStatusOnce() },
                                 onCancelPair = {
                                     drawingViewModel.clearAll(this@MainActivity)
                                     authViewModel.leavePair()
