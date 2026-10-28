@@ -1,58 +1,94 @@
-<div align="center">
-  <img width="256" height="256" alt="Love Letter Icon" src="https://github.com/user-attachments/assets/01eb5e4c-cbb7-4072-99ac-fcfc3c611f1d" />
+  # Love Letter
 
-  # Love Letter 💌
-  
-  *A private, real-time drawing messenger designed exclusively for two people.*
-</div>
-  
-  *A private, real-time drawing messenger designed exclusively for two people.*
-</div>
-  <p align="center">                                                                 
-<img width="250" height="600"  style="margin-right: 800px;" alt="72d0f0be-8cd7-41f9-8116-9fead950d667" src="https://github.com/user-attachments/assets/802dd83e-fa5c-4bbb-809c-efa895e00683" />                                                                                       
-<img width="250" height="600"  style="margin-left: 800px;" alt="5b1f1fa1-07a6-4ddc-a22e-5400738a8eec" src="https://github.com/user-attachments/assets/0c0cb71e-2243-4ff1-89f1-bea748aad6b8" />                      
-    </p>    
+  *A private, end-to-end encrypted drawing messenger designed for pairs.*
+<div>
 
+<p align="center">
+  <img width="260" alt="Love Letter Canvas Screen" src="https://github.com/user-attachments/assets/6b376d23-d997-4898-9aa2-b7caf65c25c5" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img width="260" alt="Love Letter Widget" src="https://github.com/user-attachments/assets/1008b6c1-55df-4362-bea1-eecc6d5f18e7" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img width="260" alt="Screenshot_20261024_204056" src="https://github.com/user-attachments/assets/3de5b3dd-248b-4152-8729-e95a04269eef" />
+</p>
+</div>
 
 ---
 
-## 📖 About The Project
 
-**Love Letter** is a unique Android application built to bridge the distance between two specific users. Instead of text messages, users communicate by sending hand-drawn doodles directly to each other's Android Home Screen. 
+## Overview
 
-When one person finishes a drawing and hits send, the app silently wakes up the partner's phone in the background, downloads the new art, and instantly updates their home screen widget — ensuring that a personal, handwritten surprise is waiting for them the next time they unlock their phone.
+**Love Letter** is a private Android application designed exclusively for two connected partners. Instead of standard text messages, partners exchange handwritten notes and drawings that appear directly on each other's Android Home Screen widget.
 
-## ✨ Key Features
+When a user finishes a drawing and sends it, the backend dispatches a silent push notification that wakes the partner's device in the background. The device downloads the encrypted drawing, decrypts it locally, and refreshes the home screen widget in real time without requiring the recipient to open the app.
 
-* **Home Screen Widget:** A fully responsive Android widget that displays the latest received drawing.
-* **Background Synchronization:** Uses silent Firebase Cloud Messaging `data` payloads to fetch new drawings in the background without requiring the app to be open.
-* **Interactive Canvas:** A built-in drawing tool supporting multiple colors, clearing canvas and smooth paths.
-* **Auto-Cleaning Database:** The backend automatically purges drawings older than 3 days to keep the database lightweight and cost-effective.
-* **Secure Connection:** End-to-end encrypted transit via Google Cloud Run with API Key authentication.
+---
 
-## 🛠️ Tech Stack
+## Key Features
 
-**Frontend (Android):**
-* Kotlin
-* Jetpack Compose (UI & Canvas)
-* Kotlin Coroutines & Flow
-* Ktor Client (Networking)
+* **Home Screen Widget:** Built with Jetpack Glance, rendering the latest received partner drawing on the Android launcher with automatic resizing and session state awareness.
+* **End-to-End Encryption (E2EE):** Drawings are encrypted on the sender's device using AES-256-GCM. Neither the backend server nor cloud storage can access the plaintext drawings.
+* **Background Push Synchronization:** Silent Firebase Cloud Messaging (FCM) data messages wake the recipient's phone under system WakeLock guarantees to download, decrypt, and update the widget immediately.
+* **Drawing Canvas:** Full-screen vector drawing canvas featuring:
+  * Multi-color palette with active selection highlighting and canvas-matching pure white.
+  * Dedicated canvas background fill tool.
+  * Multiple brush types: Standard Marker, Dashed, Continuous, and Highlighter.
+  * 4 brush thickness levels.
+  * Undo history stack and single-tap dot support.
+  * Automatic state caching across application pauses and process recreation.
+  * Hardware-accelerated path caching for smooth 60-120 FPS rendering.
+* **Secure Pairing System:**
+  * 6-digit invitation codes valid for 10 minutes.
+  * Public key exchange during pairing.
+  * Real-time disconnect alerts (`PAIR_DISCONNECTED`) that clear the session, history, and home screen widget on both devices instantly.
+  * Automatic cleanup of expired drawings on storage.
 
-**Backend & Infrastructure:**
-* Node.js & TypeScript
-* PostgreSQL
-* Firebase Cloud Messaging
-* Google Cloud Run
+---
 
-## 🚀 How It Works (The Magic)
+## Security and Cryptography
 
-Because the app is strictly for two users, it avoids complex login screens. It relies on a one-to-one API Key pairing system:
-1. User A draws an image and sends it via an HTTP POST request.
-2. The Node.js server saves the `ByteArray` to PostgreSQL and triggers an FCM notification to User B's device token.
-3. User B's Android system catches the silent notification via `PushNotificationService`.
-4. The app fetches the new drawing from the server and updating the home screen dynamically.
+The application implements zero-knowledge end-to-end encryption for all drawings:
 
-## ⚙️ Local Setup
+1. **Key Generation:** Each device generates an asymmetric key pair
+2. **Key Exchange:** The base64-encoded public keys are exchanged during the initial pairing handshake. Private keys remain in Android private app storage.
+3. **Shared Secret Derivation:** Both devices independently compute the shared secret using ECDH and derive an AES-256 encryption key via SHA-256.
+5. **Decryption:** The recipient downloads the encrypted payload from cloud storage and decrypts it using their local private key and the sender's public key.
 
-Since this is a private application, API keys and server URLs are not included in the repository for security reasons.
-Also, have to provide google-services.json file for Firebase Cloud Messaging to work.
+---
+
+## Tech Stack
+
+### Android Client
+* **Language:** Kotlin
+* **UI:** Jetpack Compose
+* **Widget:** Jetpack Glance
+* **Push Notifications:** Firebase Cloud Messaging (FCM)
+
+### Backend & Cloud Architecture
+* **Runtime:** Node.js, TypeScript (Google Cloud Run)
+* **Database:** PostgreSQL (Pairing state, anonymous user tokens, ephemeral codes)
+* **Object Storage:** S3-compatible cloud storage (Encrypted drawing payloads via presigned URLs)
+* **Messaging:** Firebase Admin SDK (Silent Data Messages)
+
+---
+
+## Setup and Configuration
+
+### Requirements
+* Android Studio Ladybug or newer
+* JDK 21
+* Android SDK 36 (minSdk 28)
+
+### Configuration
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:Bondpl/LoveLetter.git
+   ```
+2. Create or update `local.properties` in the project root:
+   ```properties
+   MY_EU_SERVER_URL=https://your-backend-url.run.app
+   ```
+3. Place your `google-services.json` file inside the `app/` directory for Firebase Cloud Messaging support.
+4. Build and install:
+   ```bash
+   ./gradlew assembleDebug
+   ```

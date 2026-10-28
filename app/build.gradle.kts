@@ -14,11 +14,10 @@ val localProperties = Properties().apply {
     }
 }
 
-val serverUrl = localProperties.getProperty("MY_SERVER_URL") ?: "https://api.your-domain.com"
-val apiKey = localProperties.getProperty("MY_API_KEY") ?: "DEBUG_API_KEY"
+val serverUrl = localProperties.getProperty("MY_EU_SERVER_URL") ?: "https://api.your-domain.com"
 
 android {
-    namespace = "com.example.loveletter"
+    namespace = "com.bond.loveletter"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -26,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.loveletter"
+        applicationId = "com.bond.loveletter"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
@@ -34,17 +33,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
-        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
         getByName("release") {
             optimization {
                 enable = false
-            }
-            val prodApiKey = System.getenv("PRODUCTION_API_KEY")
-            if (!prodApiKey.isNullOrBlank()) {
-                buildConfigField("String", "API_KEY", "\"$prodApiKey\"")
             }
         }
     }
@@ -79,13 +73,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.io.ktor.ktor.client.core)
-    implementation(libs.io.ktor.ktor.client.okhttp)
-    implementation(libs.io.ktor.ktor.client.content.negotiation)
-    implementation(libs.io.ktor.ktor.serialization.kotlinx.json)
-    implementation(libs.io.ktor.ktor.client.logging)
     implementation(libs.okhttp)
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx.serialization)
 }
