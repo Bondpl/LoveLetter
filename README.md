@@ -47,10 +47,9 @@ When a user finishes a drawing and sends it, the backend dispatches a silent pus
 
 The application implements zero-knowledge end-to-end encryption for all drawings:
 
-1. **Key Generation:** Each device generates an asymmetric EC key pair (`secp256r1` / NIST P-256) upon pairing initiation.
-2. **Key Exchange:** The base64-encoded public keys are exchanged during the initial pairing handshake (`/api/auth/anonymous` and `/api/pairs/join`). Private keys remain in Android private app storage.
+1. **Key Generation:** Each device generates an asymmetric key pair
+2. **Key Exchange:** The base64-encoded public keys are exchanged during the initial pairing handshake. Private keys remain in Android private app storage.
 3. **Shared Secret Derivation:** Both devices independently compute the shared secret using ECDH and derive an AES-256 encryption key via SHA-256.
-4. **Drawing Encryption:** The drawing PNG byte stream is encrypted with AES/GCM/NoPadding using a unique 12-byte initialization vector (IV) generated via `SecureRandom`.
 5. **Decryption:** The recipient downloads the encrypted payload from cloud storage and decrypts it using their local private key and the sender's public key.
 
 ---
@@ -59,11 +58,8 @@ The application implements zero-knowledge end-to-end encryption for all drawings
 
 ### Android Client
 * **Language:** Kotlin
-* **UI:** Jetpack Compose (Material 3)
-* **Widget:** Jetpack Glance (`GlanceAppWidget`, `PreferencesGlanceStateDefinition`)
-* **Networking:** Retrofit 2, OkHttp 3, Kotlinx Serialization
-* **Asynchronous:** Kotlin Coroutines, StateFlow, SharedFlow
-* **Cryptography:** Java Cryptography Architecture (JCA: ECDH `secp256r1`, AES-256-GCM, SHA-256)
+* **UI:** Jetpack Compose
+* **Widget:** Jetpack Glance
 * **Push Notifications:** Firebase Cloud Messaging (FCM)
 
 ### Backend & Cloud Architecture
