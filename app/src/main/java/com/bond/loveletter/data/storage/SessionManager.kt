@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.bond.loveletter.widget.LoveLetterWidget
 import com.bond.loveletter.data.crypto.CryptoManager
+import com.bond.loveletter.data.crypto.SecureKeyStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +46,10 @@ class SessionManager private constructor(context: Context) {
         _authState.value = computeCurrentAuthState()
     }
 
-    fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
+    fun getToken(): String? {
+        val raw = prefs.getString(KEY_TOKEN, null) ?: return null
+        return SecureKeyStorage.decrypt(raw)
+    }
 
     fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
 
@@ -55,7 +59,10 @@ class SessionManager private constructor(context: Context) {
 
     fun getMyPublicKey(): String? = prefs.getString(KEY_MY_PUBLIC_KEY, null)
 
-    fun getMyPrivateKey(): String? = prefs.getString(KEY_MY_PRIVATE_KEY, null)
+    fun getMyPrivateKey(): String? {
+        val raw = prefs.getString(KEY_MY_PRIVATE_KEY, null) ?: return null
+        return SecureKeyStorage.decrypt(raw)
+    }
 
     fun getPartnerPublicKey(): String? = prefs.getString(KEY_PARTNER_PUBLIC_KEY, null)
 
@@ -79,13 +86,13 @@ class SessionManager private constructor(context: Context) {
     fun saveMyKeyPair(publicKeyBase64: String, privateKeyBase64: String) {
         prefs.edit()
             .putString(KEY_MY_PUBLIC_KEY, publicKeyBase64)
-            .putString(KEY_MY_PRIVATE_KEY, privateKeyBase64)
+            .putString(KEY_MY_PRIVATE_KEY, SecureKeyStorage.encrypt(privateKeyBase64))
             .apply()
     }
 
     fun savePairCreated(token: String, userId: String, pairCode: String) {
         prefs.edit()
-            .putString(KEY_TOKEN, token)
+            .putString(KEY_TOKEN, SecureKeyStorage.encrypt(token))
             .putString(KEY_USER_ID, userId)
             .putString(KEY_PAIR_CODE, pairCode)
             .putBoolean(KEY_IS_PAIRED, false)
@@ -96,7 +103,7 @@ class SessionManager private constructor(context: Context) {
 
     fun savePairJoined(token: String, userId: String, partnerPublicKey: String) {
         prefs.edit()
-            .putString(KEY_TOKEN, token)
+            .putString(KEY_TOKEN, SecureKeyStorage.encrypt(token))
             .putString(KEY_USER_ID, userId)
             .putBoolean(KEY_IS_PAIRED, true)
             .putString(KEY_PARTNER_PUBLIC_KEY, partnerPublicKey)
