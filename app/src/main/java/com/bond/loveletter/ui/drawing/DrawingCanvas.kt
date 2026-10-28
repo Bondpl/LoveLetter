@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.ui.drawing
+package com.bond.loveletter.ui.drawing
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -107,7 +107,7 @@ private fun DrawScope.drawStyledPath(pathData: PathData, composePath: Path) {
             BrushType.HIGHLIGHTER -> {
                 drawCircle(
                     color = pathData.color.copy(alpha = 0.4f),
-                    radius = radius * 1.5f,
+                    radius = radius * 1.8f,
                     center = pt
                 )
             }
@@ -144,8 +144,8 @@ private fun DrawScope.drawStyledPath(pathData: PathData, composePath: Path) {
                 color = pathData.color.copy(alpha = 0.4f),
                 style = Stroke(
                     width = pathData.thickness * 1.8f,
-                    cap = StrokeCap.Square,
-                    join = StrokeJoin.Bevel
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
                 )
             )
         }
