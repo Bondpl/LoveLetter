@@ -10,6 +10,7 @@ import com.bond.loveletter.data.repository.DrawingRepository
 import com.bond.loveletter.data.storage.CanvasStorage
 import com.bond.loveletter.data.storage.SessionManager
 import com.bond.loveletter.di.NetworkModule
+import com.bond.loveletter.notification.DrawingUpdateBus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -106,6 +107,14 @@ class DrawingViewModel(
 
     private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
     val downloadedImage = _downloadedImage.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            DrawingUpdateBus.drawingUpdates.collect { bytes ->
+                _downloadedImage.value = bytes
+            }
+        }
+    }
 
     fun onAction(action: DrawingAction) {
         when (action) {
