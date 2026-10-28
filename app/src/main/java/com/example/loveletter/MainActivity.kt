@@ -46,6 +46,7 @@ import com.example.loveletter.ui.drawing.DrawingViewModel
 import com.example.loveletter.ui.drawing.flattenedColors
 import com.example.loveletter.ui.theme.LoveLetterTheme
 import com.example.loveletter.util.toPngByteArray
+import com.example.loveletter.util.toUserFriendlyMessage
 import com.example.loveletter.widget.LoveLetterWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -368,9 +369,12 @@ fun DrawingMainScreen(
                             imageBitmap.toPngByteArray()
                         }
                         val result = drawingViewModel.uploadDrawing(pngByteArray)
+                        result.onSuccess {
+                            Toast.makeText(context, "Drawing sent!", Toast.LENGTH_SHORT).show()
+                        }
                         result.onFailure { error ->
-                            val msg = error.message ?: "Upload failed"
-                            Toast.makeText(context, "Failed to send: $msg", Toast.LENGTH_LONG).show()
+                            val msg = error.toUserFriendlyMessage()
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                         }
                     }
                 },

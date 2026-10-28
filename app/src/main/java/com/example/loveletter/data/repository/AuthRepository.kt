@@ -4,6 +4,7 @@ import com.example.loveletter.data.model.*
 import com.example.loveletter.data.network.LoveLetterApiService
 import com.example.loveletter.data.network.NetworkClient
 import com.example.loveletter.data.storage.SessionManager
+import com.example.loveletter.util.toUserFriendlyMessage
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.Response
@@ -38,7 +39,7 @@ class AuthRepository(
                 Result.failure(Exception(parseError(response)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 
@@ -71,7 +72,7 @@ class AuthRepository(
                 Result.failure(Exception(parseError(response)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 
@@ -94,7 +95,7 @@ class AuthRepository(
                 Result.failure(Exception(parseError(response)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 
@@ -129,7 +130,7 @@ class AuthRepository(
                 Result.failure(Exception(parseError(response)))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 

@@ -10,6 +10,7 @@ import com.example.loveletter.data.repository.DrawingRepository
 import com.example.loveletter.data.storage.CanvasStorage
 import com.example.loveletter.data.storage.SessionManager
 import com.example.loveletter.di.NetworkModule
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -217,7 +218,12 @@ class DrawingViewModel(
     suspend fun uploadDrawing(pngByteArray: ByteArray): Result<Unit> {
         _isSending.value = true
         return try {
-            repository.sendDrawing(pngByteArray)
+            val result = repository.sendDrawing(pngByteArray)
+            delay(1000L)
+            result
+        } catch (e: Exception) {
+            delay(1000L)
+            Result.failure(e)
         } finally {
             _isSending.value = false
         }

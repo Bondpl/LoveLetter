@@ -5,6 +5,7 @@ import com.example.loveletter.data.model.ConfirmDrawingRequest
 import com.example.loveletter.data.network.LoveLetterApiService
 import com.example.loveletter.data.network.NetworkClient
 import com.example.loveletter.data.storage.SessionManager
+import com.example.loveletter.util.toUserFriendlyMessage
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -41,6 +42,9 @@ class DrawingRepository(
                 sessionManager.clearSession("You are not in an active pair. Your partner has disconnected 💔")
                 return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected 💔"))
             }
+            if (presignedResponse.code() == 429) {
+                return Result.failure(Exception("You're sending drawings too fast"));
+            }
             if (!presignedResponse.isSuccessful || presignedResponse.body() == null) {
                 return Result.failure(Exception("Failed to get upload URL: ${parseError(presignedResponse)}"))
             }
@@ -74,7 +78,7 @@ class DrawingRepository(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 
@@ -127,7 +131,7 @@ class DrawingRepository(
 
             Result.success(decryptedBytes)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(e.toUserFriendlyMessage(), e))
         }
     }
 

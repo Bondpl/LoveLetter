@@ -3,20 +3,17 @@ package com.example.loveletter.data.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// Uniwersalna odpowiedź z komunikatem
 @Serializable
 data class MessageResponse(
     @SerialName("message") val message: String
 )
 
-// Uniwersalna struktura błędu
 @Serializable
 data class ApiErrorResponse(
     @SerialName("error") val error: String,
     @SerialName("status") val status: Int
 )
 
-// Rejestracja anonimowa
 @Serializable
 data class AnonymousRegisterRequest(
     @SerialName("publicKey") val publicKey: String
@@ -29,7 +26,6 @@ data class AnonymousAuthResponse(
     @SerialName("userId") val userId: String
 )
 
-// Dołączanie do pary
 @Serializable
 data class JoinPairRequest(
     @SerialName("pairCode") val pairCode: String,
@@ -44,20 +40,17 @@ data class JoinPairResponse(
     @SerialName("partnerPublicKey") val partnerPublicKey: String
 )
 
-// Status pary
 @Serializable
 data class PairStatusResponse(
     @SerialName("isPaired") val isPaired: Boolean,
     @SerialName("partnerPublicKey") val partnerPublicKey: String? = null
 )
 
-// FCM
 @Serializable
 data class FcmTokenRequest(
     @SerialName("fcmToken") val fcmToken: String
 )
 
-// Upload rysunku
 @Serializable
 data class PresignedUrlResponse(
     @SerialName("S3URL") val s3Url: String,
@@ -70,7 +63,6 @@ data class ConfirmDrawingRequest(
     @SerialName("iv") val iv: String
 )
 
-// Pobranie rysunku
 @Serializable
 data class DrawingData(
     @SerialName("imageUrl") val imageUrl: String,

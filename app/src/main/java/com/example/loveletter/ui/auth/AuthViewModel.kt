@@ -6,6 +6,7 @@ import com.example.loveletter.data.repository.AuthRepository
 import com.example.loveletter.data.storage.AuthState
 import com.example.loveletter.data.storage.SessionManager
 import com.example.loveletter.di.NetworkModule
+import com.example.loveletter.util.toUserFriendlyMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,7 +57,7 @@ class AuthViewModel : ViewModel() {
             val result = authRepository.createPair()
             _isLoading.value = false
             result.onFailure { error ->
-                _errorMessage.value = error.message ?: "Failed to create pair"
+                _errorMessage.value = error.toUserFriendlyMessage()
             }
         }
     }
@@ -74,7 +75,7 @@ class AuthViewModel : ViewModel() {
             val result = authRepository.joinPair(trimmed)
             _isLoading.value = false
             result.onFailure { error ->
-                _errorMessage.value = error.message ?: "Failed to join pair"
+                _errorMessage.value = error.toUserFriendlyMessage()
             }
         }
     }
