@@ -1,7 +1,7 @@
   # Love Letter
 
   *A private, end-to-end encrypted drawing messenger designed for pairs.*
-</div>
+<div>
 
 <p align="center">
   <img width="260" alt="Love Letter Canvas Screen" src="https://github.com/user-attachments/assets/6b376d23-d997-4898-9aa2-b7caf65c25c5" />
@@ -10,6 +10,7 @@
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img width="260" alt="Screenshot_20261024_204056" src="https://github.com/user-attachments/assets/3de5b3dd-248b-4152-8729-e95a04269eef" />
 </p>
+</div>
 
 ---
 
