@@ -17,7 +17,7 @@ val localProperties = Properties().apply {
 val serverUrl = localProperties.getProperty("MY_EU_SERVER_URL") ?: "https://api.your-domain.com"
 
 android {
-    namespace = "com.example.loveletter"
+    namespace = "com.bond.loveletter"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -25,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.loveletter"
+        applicationId = "com.bond.loveletter"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
