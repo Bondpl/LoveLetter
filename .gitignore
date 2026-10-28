@@ -14,8 +14,9 @@
 # !.idea/codeStyles/
 # !.idea/inspectionProfiles/
 
-# Local configuration (SDK path) - do not commit
+# Local configuration (SDK path & secrets) - do not commit
 local.properties
+google-services.json
 
 # Signing keys
 *.jks
