@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.data.model
+package com.bond.loveletter.data.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -43,7 +43,8 @@ data class JoinPairResponse(
 @Serializable
 data class PairStatusResponse(
     @SerialName("isPaired") val isPaired: Boolean,
-    @SerialName("partnerPublicKey") val partnerPublicKey: String? = null
+    @SerialName("partnerPublicKey") val partnerPublicKey: String? = null,
+    @SerialName("pairId") val pairId: String? = null
 )
 
 @Serializable

@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.data.repository
+package com.bond.loveletter.data.repository
 
 import com.bond.loveletter.data.model.*
 import com.bond.loveletter.data.network.LoveLetterApiService
@@ -56,7 +56,8 @@ class AuthRepository(
                 sessionManager.savePairJoined(
                     token = joinData.token,
                     userId = joinData.userId,
-                    partnerPublicKey = joinData.partnerPublicKey
+                    partnerPublicKey = joinData.partnerPublicKey,
+                    pairId = joinData.pairId
                 )
                 // Register FCM token if already cached
                 sessionManager.getFcmToken()?.let { fcmToken ->
@@ -82,10 +83,15 @@ class AuthRepository(
             if (response.isSuccessful && response.body() != null) {
                 val statusData = response.body()!!
                 if (statusData.isPaired && !statusData.partnerPublicKey.isNullOrBlank()) {
-                    sessionManager.updatePartnerConnected(statusData.partnerPublicKey)
+                    sessionManager.updatePartnerConnected(
+                        partnerPublicKey = statusData.partnerPublicKey,
+                        pairId = statusData.pairId
+                    )
                 } else if (!statusData.isPaired && sessionManager.isPaired()) {
                     // Partner disconnected from the pair
                     sessionManager.clearSession()
+                } else if (statusData.isPaired && !statusData.pairId.isNullOrBlank()) {
+                    sessionManager.savePairId(statusData.pairId)
                 }
                 Result.success(statusData)
             } else {

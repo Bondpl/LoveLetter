@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.notification
+package com.bond.loveletter.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -24,12 +24,26 @@ class PushNotificationService : FirebaseMessagingService() {
         val type = remoteMessage.data["type"]
         val dataTitle = remoteMessage.data["title"] ?: remoteMessage.notification?.title
         val dataBody = remoteMessage.data["body"] ?: remoteMessage.notification?.body
+        val sessionManager = NetworkModule.getSessionManager(applicationContext)
 
         when (type) {
             "NEW_DRAWING" -> {
+                val incomingPairId = remoteMessage.data["pairId"]
+                val currentPairId = sessionManager.getPairId()
+
+                if (!incomingPairId.isNullOrBlank() && !currentPairId.isNullOrBlank() && incomingPairId != currentPairId) {
+                    Log.w("FCM", "Zignorowano przestarzale NEW_DRAWING: incoming=$incomingPairId, current=$currentPairId")
+                    return
+                }
+
+                if (!sessionManager.isPaired()) {
+                    Log.w("FCM", "Zignorowano NEW_DRAWING: uzytkownik nie jest w aktywnej parze")
+                    return
+                }
+
                 val title = dataTitle ?: "New Drawing"
                 val body = dataBody ?: "Your partner sent you a drawing!"
-                sendNotification(title = title, body = body, data = remoteMessage.data)
+                sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
 
                 // Run blocking to hold Firebase WakeLock while downloading, decrypting and updating widget
                 runBlocking(Dispatchers.IO) {
@@ -54,25 +68,31 @@ class PushNotificationService : FirebaseMessagingService() {
             }
 
             "PAIR_DISCONNECTED" -> {
-                val title = dataTitle ?: "LoveLetter"
-                val body = dataBody ?: "Your partner has left the pair"
-                sendNotification(title = title, body = body, data = remoteMessage.data)
+                val incomingPairId = remoteMessage.data["pairId"]
+                val currentPairId = sessionManager.getPairId()
 
-                // Reset local state, session and widget synchronously while service is active
-                runBlocking(Dispatchers.IO) {
-                    val sessionManager = NetworkModule.getSessionManager(applicationContext)
-                    sessionManager.clearSession("Your partner has disconnected the pair")
-                    LoveLetterWidget.clearWidgetSuspend(applicationContext)
-                    DrawingUpdateBus.clear()
+                if (!incomingPairId.isNullOrBlank() && incomingPairId == currentPairId) {
+                    val title = dataTitle ?: "LoveLetter"
+                    val body = dataBody ?: "Your partner has left the pair"
+                    sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DISCONNECT_ID)
+
+                    // Reset local state, session and widget synchronously while service is active
+                    runBlocking(Dispatchers.IO) {
+                        sessionManager.clearSession("Your partner has disconnected the pair")
+                        LoveLetterWidget.clearWidgetSuspend(applicationContext)
+                        DrawingUpdateBus.clear()
+                    }
+                } else {
+                    Log.w("FCM", "Zignorowano przestarzale PAIR_DISCONNECTED: $incomingPairId (aktywny: $currentPairId)")
                 }
             }
 
             else -> {
                 val title = dataTitle ?: "LoveLetter"
                 val body = dataBody ?: "You have a new update!"
-                sendNotification(title = title, body = body, data = remoteMessage.data)
+                sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
 
-                if (remoteMessage.data.isNotEmpty()) {
+                if (remoteMessage.data.isNotEmpty() && sessionManager.isPaired()) {
                     runBlocking(Dispatchers.IO) {
                         try {
                             val repository = NetworkModule.getDrawingRepository(applicationContext)
@@ -102,19 +122,27 @@ class PushNotificationService : FirebaseMessagingService() {
         }
     }
 
-    private fun sendNotification(title: String, body: String, data: Map<String, String> = emptyMap()) {
+    private fun sendNotification(
+        title: String,
+        body: String,
+        data: Map<String, String> = emptyMap(),
+        notificationId: Int = NOTIFICATION_DRAWING_ID
+    ) {
         createNotificationChannel()
 
         val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             data.forEach { (key, value) ->
                 putExtra(key, value)
+            }
+            if (data["type"] == "NEW_DRAWING") {
+                putExtra("EXTRA_OPEN_PARTNER_DRAWING", true)
             }
         }
 
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -129,7 +157,7 @@ class PushNotificationService : FirebaseMessagingService() {
             .build()
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        notificationManager.notify(notificationId, notification)
     }
 
     private fun createNotificationChannel() {
@@ -146,6 +174,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     companion object {
         const val CHANNEL_ID = "love_letter_channel"
-        const val NOTIFICATION_ID = 1
+        const val NOTIFICATION_DRAWING_ID = 1
+        const val NOTIFICATION_DISCONNECT_ID = 2
     }
 }

@@ -55,6 +55,12 @@ class SessionManager private constructor(context: Context) {
 
     fun getPairCode(): String? = prefs.getString(KEY_PAIR_CODE, null)
 
+    fun getPairId(): String? = prefs.getString(KEY_PAIR_ID, null)
+
+    fun savePairId(pairId: String) {
+        prefs.edit().putString(KEY_PAIR_ID, pairId).apply()
+    }
+
     fun isPaired(): Boolean = prefs.getBoolean(KEY_IS_PAIRED, false)
 
     fun getMyPublicKey(): String? = prefs.getString(KEY_MY_PUBLIC_KEY, null)
@@ -97,27 +103,36 @@ class SessionManager private constructor(context: Context) {
             .putString(KEY_PAIR_CODE, pairCode)
             .putBoolean(KEY_IS_PAIRED, false)
             .remove(KEY_PARTNER_PUBLIC_KEY)
+            .remove(KEY_PAIR_ID)
             .apply()
         refreshAuthState()
     }
 
-    fun savePairJoined(token: String, userId: String, partnerPublicKey: String) {
-        prefs.edit()
+    fun savePairJoined(token: String, userId: String, partnerPublicKey: String, pairId: String? = null) {
+        val editor = prefs.edit()
             .putString(KEY_TOKEN, SecureKeyStorage.encrypt(token))
             .putString(KEY_USER_ID, userId)
             .putBoolean(KEY_IS_PAIRED, true)
             .putString(KEY_PARTNER_PUBLIC_KEY, partnerPublicKey)
             .remove(KEY_PAIR_CODE)
-            .apply()
+        if (!pairId.isNullOrBlank()) {
+            editor.putString(KEY_PAIR_ID, pairId)
+        } else {
+            editor.remove(KEY_PAIR_ID)
+        }
+        editor.apply()
         refreshAuthState()
     }
 
-    fun updatePartnerConnected(partnerPublicKey: String) {
-        prefs.edit()
+    fun updatePartnerConnected(partnerPublicKey: String, pairId: String? = null) {
+        val editor = prefs.edit()
             .putBoolean(KEY_IS_PAIRED, true)
             .putString(KEY_PARTNER_PUBLIC_KEY, partnerPublicKey)
             .remove(KEY_PAIR_CODE)
-            .apply()
+        if (!pairId.isNullOrBlank()) {
+            editor.putString(KEY_PAIR_ID, pairId)
+        }
+        editor.apply()
         refreshAuthState()
     }
 
@@ -132,6 +147,7 @@ class SessionManager private constructor(context: Context) {
             .remove(KEY_PARTNER_PUBLIC_KEY)
             .remove(KEY_MY_PUBLIC_KEY)
             .remove(KEY_MY_PRIVATE_KEY)
+            .remove(KEY_PAIR_ID)
             .apply()
         _lastDisconnectReason.value = reason
         LoveLetterWidget.clearWidget(appContext)
@@ -153,6 +169,7 @@ class SessionManager private constructor(context: Context) {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_PAIR_CODE = "pair_code"
+        private const val KEY_PAIR_ID = "pair_id"
         private const val KEY_IS_PAIRED = "is_paired"
         private const val KEY_MY_PUBLIC_KEY = "my_public_key"
         private const val KEY_MY_PRIVATE_KEY = "my_private_key"

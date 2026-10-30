@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.ui.auth
+package com.bond.loveletter.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,11 +30,26 @@ class AuthViewModel : ViewModel() {
     private var pollingJob: Job? = null
 
     init {
+        if (sessionManager.isPaired() && sessionManager.getPairId().isNullOrBlank()) {
+            viewModelScope.launch {
+                try {
+                    authRepository.checkPairStatus()
+                } catch (_: Exception) {}
+            }
+        }
+
         viewModelScope.launch {
             authState.collect { state ->
                 when (state) {
                     is AuthState.WaitingForPartner -> startWaitingPolling()
-                    is AuthState.Paired -> stopPolling()
+                    is AuthState.Paired -> {
+                        stopPolling()
+                        if (sessionManager.getPairId().isNullOrBlank()) {
+                            try {
+                                authRepository.checkPairStatus()
+                            } catch (_: Exception) {}
+                        }
+                    }
                     is AuthState.Unauthenticated -> {
                         stopPolling()
                         sessionManager.consumeDisconnectReason()?.let { reason ->

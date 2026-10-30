@@ -84,6 +84,7 @@ sealed interface DrawingAction {
     data class OnDraw(val offset: Offset) : DrawingAction
     data object OnDrawingEnd : DrawingAction
     data object OnUndo : DrawingAction
+    data object OnRedo : DrawingAction
     data object OnClearCanvasClick : DrawingAction
     data class OnFill(val color: Color) : DrawingAction
     data class OnSetBrushSize(val size: Float) : DrawingAction
@@ -98,6 +99,13 @@ class DrawingViewModel(
     val state = _state.asStateFlow()
 
     private val history = mutableListOf<DrawingState>()
+    private val redoStack = mutableListOf<DrawingState>()
+
+    private val _canUndo = MutableStateFlow(false)
+    val canUndo = _canUndo.asStateFlow()
+
+    private val _canRedo = MutableStateFlow(false)
+    val canRedo = _canRedo.asStateFlow()
 
     private val _isSending = MutableStateFlow(false)
     val isSending = _isSending.asStateFlow()
@@ -108,12 +116,27 @@ class DrawingViewModel(
     private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
     val downloadedImage = _downloadedImage.asStateFlow()
 
+    private val _showPartnerArt = MutableStateFlow(false)
+    val showPartnerArt = _showPartnerArt.asStateFlow()
+
     init {
         viewModelScope.launch {
             DrawingUpdateBus.drawingUpdates.collect { bytes ->
                 _downloadedImage.value = bytes
             }
         }
+    }
+
+    fun openPartnerArt() {
+        _showPartnerArt.value = true
+    }
+
+    fun closePartnerArt() {
+        _showPartnerArt.value = false
+    }
+
+    private fun isVisuallyEqual(a: DrawingState, b: DrawingState): Boolean {
+        return a.backgroundColor == b.backgroundColor && a.paths == b.paths
     }
 
     fun onAction(action: DrawingAction) {
@@ -154,12 +177,48 @@ class DrawingViewModel(
                 }
             }
             DrawingAction.OnUndo -> {
-                if (history.isNotEmpty()) {
-                    val lastState = history.removeAt(history.size - 1)
-                    _state.value = lastState
+                while (history.isNotEmpty()) {
+                    val previousState = history.removeAt(history.size - 1)
+                    if (!isVisuallyEqual(previousState, _state.value)) {
+                        if (redoStack.size >= MAX_HISTORY) {
+                            redoStack.removeAt(0)
+                        }
+                        redoStack.add(_state.value.copy(currentPath = null))
+                        _state.value = previousState.copy(
+                            currentPath = null,
+                            selectedColor = _state.value.selectedColor,
+                            brushThickness = _state.value.brushThickness,
+                            brushType = _state.value.brushType
+                        )
+                        break
+                    }
                 }
+                updateUndoRedo()
+            }
+            DrawingAction.OnRedo -> {
+                while (redoStack.isNotEmpty()) {
+                    val nextState = redoStack.removeAt(redoStack.size - 1)
+                    if (!isVisuallyEqual(nextState, _state.value)) {
+                        if (history.size >= MAX_HISTORY) {
+                            history.removeAt(0)
+                        }
+                        history.add(_state.value.copy(currentPath = null))
+                        _state.value = nextState.copy(
+                            currentPath = null,
+                            selectedColor = _state.value.selectedColor,
+                            brushThickness = _state.value.brushThickness,
+                            brushType = _state.value.brushType
+                        )
+                        break
+                    }
+                }
+                updateUndoRedo()
             }
             DrawingAction.OnClearCanvasClick -> {
+                // If the canvas is already empty with default white background, do nothing!
+                if (_state.value.paths.isEmpty() && _state.value.backgroundColor == Color.White) {
+                    return
+                }
                 saveToHistory()
                 _state.update {
                     it.copy(
@@ -170,6 +229,10 @@ class DrawingViewModel(
                 }
             }
             is DrawingAction.OnFill -> {
+                // If background is already this color, do nothing!
+                if (_state.value.backgroundColor == action.color) {
+                    return
+                }
                 saveToHistory()
                 _state.update { it.copy(backgroundColor = action.color) }
             }
@@ -183,10 +246,22 @@ class DrawingViewModel(
     }
 
     private fun saveToHistory() {
-        if (history.size >= 30) {
+        val stateToSave = _state.value.copy(currentPath = null)
+        // If the state is visually identical to the last one in history, don't duplicate it
+        if (history.isNotEmpty() && isVisuallyEqual(history.last(), stateToSave)) {
+            return
+        }
+        redoStack.clear()
+        if (history.size >= MAX_HISTORY) {
             history.removeAt(0)
         }
-        history.add(_state.value)
+        history.add(stateToSave)
+        updateUndoRedo()
+    }
+
+    private fun updateUndoRedo() {
+        _canUndo.value = history.any { !isVisuallyEqual(it, _state.value) }
+        _canRedo.value = redoStack.any { !isVisuallyEqual(it, _state.value) }
     }
 
     fun getHistoryToSave(): List<DrawingState> {
@@ -196,10 +271,22 @@ class DrawingViewModel(
     fun restoreHistory(savedHistory: List<DrawingState>) {
         if (savedHistory.isEmpty()) return
         history.clear()
-        if (savedHistory.size > 1) {
-            history.addAll(savedHistory.subList(0, savedHistory.size - 1))
+        redoStack.clear()
+        for (st in savedHistory) {
+            if (history.isEmpty() || !isVisuallyEqual(history.last(), st)) {
+                history.add(st.copy(currentPath = null))
+            }
         }
-        _state.value = savedHistory.last()
+        if (history.isNotEmpty()) {
+            val last = history.removeAt(history.size - 1)
+            _state.value = last
+        }
+        if (history.size > MAX_HISTORY) {
+            val trimmed = history.takeLast(MAX_HISTORY)
+            history.clear()
+            history.addAll(trimmed)
+        }
+        updateUndoRedo()
     }
 
     fun loadSavedHistory(context: android.content.Context) {
@@ -217,8 +304,11 @@ class DrawingViewModel(
 
     fun clearAll(context: android.content.Context) {
         history.clear()
+        redoStack.clear()
+        updateUndoRedo()
         _state.value = DrawingState()
         _downloadedImage.value = null
+        _showPartnerArt.value = false
         viewModelScope.launch {
             CanvasStorage.clearHistory(context)
         }
@@ -273,5 +363,9 @@ class DrawingViewModel(
 
     fun onDrawingReceived(imageBytes: ByteArray) {
         _downloadedImage.value = imageBytes
+    }
+
+    companion object {
+        private const val MAX_HISTORY = 50
     }
 }

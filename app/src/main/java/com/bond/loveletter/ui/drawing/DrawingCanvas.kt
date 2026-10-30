@@ -13,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -44,10 +43,9 @@ fun DrawingCanvas(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .clipToBounds()
+            .clip(RoundedCornerShape(20.dp))
             .background(backgroundColor)
             .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     onAction(DrawingAction.OnDrawingStart(offset))

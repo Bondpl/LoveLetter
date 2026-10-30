@@ -1,5 +1,6 @@
-﻿package com.bond.loveletter
+package com.bond.loveletter
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
@@ -10,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -60,6 +62,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        handleNotificationIntent(intent)
 
         fcmTokenManager = FCMTokenManager(this)
         fcmTokenManager.requestNotificationPermission()
@@ -133,6 +137,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent == null) return
+        val type = intent.getStringExtra("type")
+        val openArt = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_DRAWING", false)
+        if (type == "NEW_DRAWING" || openArt) {
+            drawingViewModel.openPartnerArt()
+            drawingViewModel.fetchLatestDrawing()
+            intent.removeExtra("type")
+            intent.removeExtra("EXTRA_OPEN_PARTNER_DRAWING")
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         if (authViewModel.authState.value is AuthState.Paired) {
@@ -174,12 +196,14 @@ fun DrawingMainScreen(
     val isSending by drawingViewModel.isSending.collectAsStateWithLifecycle()
     val isFetching by drawingViewModel.isFetching.collectAsStateWithLifecycle()
     val downloadedImage by drawingViewModel.downloadedImage.collectAsStateWithLifecycle()
+    val showPartnerDrawingDialog by drawingViewModel.showPartnerArt.collectAsStateWithLifecycle()
+    val canUndo by drawingViewModel.canUndo.collectAsStateWithLifecycle()
+    val canRedo by drawingViewModel.canRedo.collectAsStateWithLifecycle()
     val graphicsLayer = rememberGraphicsLayer()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     var showDisconnectDialog by remember { mutableStateOf(false) }
-    var showPartnerDrawingDialog by remember { mutableStateOf(false) }
 
     val partnerBitmap = remember(downloadedImage) {
         downloadedImage?.let { bytes ->
@@ -227,9 +251,9 @@ fun DrawingMainScreen(
         )
     }
 
-    if (showPartnerDrawingDialog && partnerBitmap != null) {
+    if (showPartnerDrawingDialog) {
         Dialog(
-            onDismissRequest = { showPartnerDrawingDialog = false },
+            onDismissRequest = { drawingViewModel.closePartnerArt() },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(
@@ -254,33 +278,75 @@ fun DrawingMainScreen(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        TextButton(onClick = { showPartnerDrawingDialog = false }) {
+                        TextButton(onClick = { drawingViewModel.closePartnerArt() }) {
                             Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            bitmap = partnerBitmap,
-                            contentDescription = "Full Screen Partner Drawing",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    if (partnerBitmap != null) {
+                        val imageAspectRatio = remember(partnerBitmap) {
+                            if (partnerBitmap.height > 0) {
+                                partnerBitmap.width.toFloat() / partnerBitmap.height.toFloat()
+                            } else 1f
+                        }
+
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val containerAspect = maxWidth / maxHeight
+                            val imageModifier = if (containerAspect > imageAspectRatio) {
+                                Modifier
+                                    .fillMaxHeight()
+                                    .width(maxHeight * imageAspectRatio)
+                            } else {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(maxWidth / imageAspectRatio)
+                            }
+
+                            Box(
+                                modifier = imageModifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                            ) {
+                                Image(
+                                    bitmap = partnerBitmap,
+                                    contentDescription = "Full Screen Partner Drawing",
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = "Loading partner's drawing...",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { showPartnerDrawingDialog = false },
+                        onClick = { drawingViewModel.closePartnerArt() },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -305,7 +371,7 @@ fun DrawingMainScreen(
                 actions = {
                     if (partnerBitmap != null) {
                         FilledTonalButton(
-                            onClick = { showPartnerDrawingDialog = true },
+                            onClick = { drawingViewModel.openPartnerArt() },
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.padding(end = 4.dp),
                             shape = RoundedCornerShape(10.dp)
@@ -379,6 +445,9 @@ fun DrawingMainScreen(
                     }
                 },
                 onUndo = { drawingViewModel.onAction(DrawingAction.OnUndo) },
+                onRedo = { drawingViewModel.onAction(DrawingAction.OnRedo) },
+                canUndo = canUndo,
+                canRedo = canRedo,
                 onFill = { drawingViewModel.onAction(DrawingAction.OnFill(it)) },
                 onSetBrushType = { drawingViewModel.onAction(DrawingAction.OnSetBrushType(it)) },
                 onSetBrushLevel = { level ->

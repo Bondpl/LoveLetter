@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.ui.drawing
+package com.bond.loveletter.ui.drawing
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +59,9 @@ fun ColumnScope.CanvasControls(
     onClearCanvas: () -> Unit,
     onSendAction: () -> Unit,
     onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    canUndo: Boolean = true,
+    canRedo: Boolean = false,
     modifier: Modifier = Modifier,
     onFill: (Color) -> Unit = {},
     onSetBrushType: (BrushType) -> Unit = {},
@@ -207,7 +210,7 @@ fun ColumnScope.CanvasControls(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 3. Undo, Clear, and Send actions
+            // 3. Undo, Redo, Clear, and Send actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -216,12 +219,27 @@ fun ColumnScope.CanvasControls(
                 // Undo Button
                 OutlinedIconButton(
                     onClick = onUndo,
+                    enabled = canUndo,
                     modifier = Modifier.size(42.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.outline_backspace_24),
+                        painter = painterResource(id = R.drawable.outline_undo_24),
                         contentDescription = "Undo",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // Redo Button
+                OutlinedIconButton(
+                    onClick = onRedo,
+                    enabled = canRedo,
+                    modifier = Modifier.size(42.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_redo_24),
+                        contentDescription = "Redo",
                         modifier = Modifier.size(20.dp)
                     )
                 }
