@@ -36,6 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -71,6 +74,14 @@ fun ColumnScope.CanvasControls(
 ) {
     val scrollState = rememberScrollState()
     var showOptions by remember { mutableStateOf(false) }
+    var showColorPickerDialog by remember { mutableStateOf(false) }
+    var customColor by remember { mutableStateOf<Color?>(null) }
+
+    LaunchedEffect(selectedColor) {
+        if (selectedColor !in colors) {
+            customColor = selectedColor
+        }
+    }
 
     val currentLevel = when {
         brushThickness <= 10f -> 1
@@ -99,6 +110,71 @@ fun ColumnScope.CanvasControls(
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Custom Color Palette Button (Rainbow sweep gradient border)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.sweepGradient(
+                                listOf(
+                                    Color(0xFFFF0000),
+                                    Color(0xFFFFFF00),
+                                    Color(0xFF00FF00),
+                                    Color(0xFF00FFFF),
+                                    Color(0xFF0000FF),
+                                    Color(0xFFFF00FF),
+                                    Color(0xFFFF0000)
+                                )
+                            )
+                        )
+                        .clickable { showColorPickerDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.outline_palette_24),
+                            contentDescription = "Custom Color Picker",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // If user selected a custom color not in preset list, display it right next to palette button
+                val activeCustom = customColor
+                if (activeCustom != null && activeCustom !in colors) {
+                    val isSelected = activeCustom == selectedColor
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(activeCustom)
+                            .border(
+                                width = if (isSelected) 3.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.6f),
+                                shape = CircleShape
+                            )
+                            .clickable { onSelectColor(activeCustom) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(if (activeCustom.luminance() > 0.5f) Color.Black else Color.White)
+                            )
+                        }
+                    }
+                }
+
                 for (color in colors) {
                     val isSelected = color == selectedColor
                     Box(
@@ -119,7 +195,7 @@ fun ColumnScope.CanvasControls(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(if (color == Color.White) Color.Black else Color.White)
+                                    .background(if (color.luminance() > 0.5f) Color.Black else Color.White)
                             )
                         }
                     }
@@ -324,6 +400,17 @@ fun ColumnScope.CanvasControls(
                     Text("Close")
                 }
             }
+        )
+    }
+
+    if (showColorPickerDialog) {
+        ColorPickerDialog(
+            initialColor = selectedColor,
+            onColorSelected = { newColor ->
+                customColor = newColor
+                onSelectColor(newColor)
+            },
+            onDismiss = { showColorPickerDialog = false }
         )
     }
 }
