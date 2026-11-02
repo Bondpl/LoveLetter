@@ -13,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +49,7 @@ import com.bond.loveletter.ui.drawing.DrawingCanvas
 import com.bond.loveletter.ui.drawing.DrawingViewModel
 import com.bond.loveletter.ui.drawing.flattenedColors
 import com.bond.loveletter.ui.theme.LoveLetterTheme
+import com.bond.loveletter.util.saveImageToGallery
 import com.bond.loveletter.util.toPngByteArray
 import com.bond.loveletter.util.toUserFriendlyMessage
 import com.bond.loveletter.widget.LoveLetterWidget
@@ -278,8 +281,39 @@ fun DrawingMainScreen(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        TextButton(onClick = { drawingViewModel.closePartnerArt() }) {
-                            Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (downloadedImage != null) {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch(Dispatchers.IO) {
+                                            val success = saveImageToGallery(context, downloadedImage!!)
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(
+                                                    context,
+                                                    if (success) "Drawing saved to gallery!" else "Failed to save drawing",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(Color.White.copy(alpha = 0.15f), CircleShape)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.outline_download_24),
+                                        contentDescription = "Download to phone",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            TextButton(onClick = { drawingViewModel.closePartnerArt() }) {
+                                Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 
@@ -412,14 +446,11 @@ fun DrawingMainScreen(
                 currentPath = state.currentPath,
                 onAction = drawingViewModel::onAction,
                 backgroundColor = state.backgroundColor,
+                graphicsLayer = graphicsLayer,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 12.dp, vertical = 6.dp)
-                    .drawWithContent {
-                        graphicsLayer.record { this@drawWithContent.drawContent() }
-                        drawLayer(graphicsLayer)
-                    }
             )
 
             CanvasControls(

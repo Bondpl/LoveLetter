@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -20,6 +23,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -30,7 +35,8 @@ fun DrawingCanvas(
     currentPath: PathData?,
     onAction: (DrawingAction) -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White
+    backgroundColor: Color = Color.White,
+    graphicsLayer: GraphicsLayer? = null
 ) {
     // Cache for completed Path objects so we do not re-create Path() every single frame
     val pathCache = remember { mutableMapOf<String, Path>() }
@@ -40,48 +46,63 @@ fun DrawingCanvas(
         pathCache.keys.retainAll(activeIds)
     }
 
-    Canvas(
+    // Outer Box provides the UI rounded card appearance and border on screen
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(backgroundColor)
             .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    onAction(DrawingAction.OnDrawingStart(offset))
-                    onAction(DrawingAction.OnDrawingEnd)
-                }
-            }
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
+    ) {
+        // Inner Canvas draws the rectangular background and paths; graphicsLayer records ONLY this clean canvas
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+                .then(
+                    if (graphicsLayer != null) {
+                        Modifier.drawWithContent {
+                            graphicsLayer.record { this@drawWithContent.drawContent() }
+                            drawLayer(graphicsLayer)
+                        }
+                    } else Modifier
+                )
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
                         onAction(DrawingAction.OnDrawingStart(offset))
-                    },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        onAction(DrawingAction.OnDraw(change.position))
-                    },
-                    onDragEnd = {
-                        onAction(DrawingAction.OnDrawingEnd)
-                    },
-                    onDragCancel = {
                         onAction(DrawingAction.OnDrawingEnd)
                     }
-                )
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            onAction(DrawingAction.OnDrawingStart(offset))
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            onAction(DrawingAction.OnDraw(change.position))
+                        },
+                        onDragEnd = {
+                            onAction(DrawingAction.OnDrawingEnd)
+                        },
+                        onDragCancel = {
+                            onAction(DrawingAction.OnDrawingEnd)
+                        }
+                    )
+                }
+        ) {
+            // Draw completed paths from cache
+            paths.fastForEach { pathData ->
+                val cachedPath = pathCache.getOrPut(pathData.id) {
+                    buildComposePath(pathData.path)
+                }
+                drawStyledPath(pathData, cachedPath)
             }
-    ) {
-        // Draw completed paths from cache
-        paths.fastForEach { pathData ->
-            val cachedPath = pathCache.getOrPut(pathData.id) {
-                buildComposePath(pathData.path)
-            }
-            drawStyledPath(pathData, cachedPath)
-        }
 
-        // Draw active in-progress path
-        currentPath?.let { pathData ->
-            val inProgressPath = buildComposePath(pathData.path)
-            drawStyledPath(pathData, inProgressPath)
+            // Draw active in-progress path
+            currentPath?.let { pathData ->
+                val inProgressPath = buildComposePath(pathData.path)
+                drawStyledPath(pathData, inProgressPath)
+            }
         }
     }
 }
