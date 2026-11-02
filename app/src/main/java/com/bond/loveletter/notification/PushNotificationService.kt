@@ -10,11 +10,13 @@ import androidx.core.app.NotificationCompat
 import com.bond.loveletter.MainActivity
 import com.bond.loveletter.R
 import com.bond.loveletter.di.NetworkModule
+import com.bond.loveletter.util.DrawingPayloadUtils
 import com.bond.loveletter.widget.LoveLetterWidget
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
 class PushNotificationService : FirebaseMessagingService() {
 
@@ -41,28 +43,77 @@ class PushNotificationService : FirebaseMessagingService() {
                     return
                 }
 
-                val title = dataTitle ?: "New Drawing"
-                val body = dataBody ?: "Your partner sent you a drawing!"
-                sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
-
-                // Run blocking to hold Firebase WakeLock while downloading, decrypting and updating widget
+                // Run blocking to hold Firebase WakeLock while downloading, decrypting and routing
                 runBlocking(Dispatchers.IO) {
                     try {
                         val repository = NetworkModule.getDrawingRepository(applicationContext)
                         val result = repository.getLatestDrawing()
-                        result.onSuccess { imageBytes ->
-                            if (imageBytes != null) {
-                                Log.d("PushService", "Downloaded and decrypted drawing, size=${imageBytes.size}")
-                                LoveLetterWidget.updateWidgetImageSuspend(applicationContext, imageBytes)
-                                DrawingUpdateBus.notifyNewDrawing(imageBytes)
+                        result.onSuccess { rawBytes ->
+                            if (rawBytes != null) {
+                                if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
+                                    val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
+                                    val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
+                                    Log.d("PushService", "Downloaded and decrypted photo (viewOnce=$isViewOnce), size=${photoBytes.size}")
+
+                                    // 1. Save photo locally for partner photo viewer
+                                    try {
+                                        File(applicationContext.filesDir, "latest_partner_photo.png").writeBytes(photoBytes)
+                                        val flagFile = File(applicationContext.filesDir, "partner_photo_view_once.flag")
+                                        if (isViewOnce) {
+                                            flagFile.createNewFile()
+                                        } else {
+                                            flagFile.delete()
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("PushService", "Failed to cache photo locally", e)
+                                    }
+
+                                    // 2. Notify bus (do NOT touch widget!)
+                                    DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce)
+
+                                    // 3. Send photo notification
+                                    val title = if (isViewOnce) "View-Once Photo" else (dataTitle ?: "New Photo")
+                                    val body = if (isViewOnce) "Your partner sent you a view-once photo!" else (dataBody ?: "Your partner sent you a photo!")
+                                    val photoData = remoteMessage.data.toMutableMap().apply {
+                                        put("EXTRA_OPEN_PARTNER_PHOTO", "true")
+                                    }
+                                    sendNotification(
+                                        title = title,
+                                        body = body,
+                                        data = photoData,
+                                        notificationId = NOTIFICATION_PHOTO_ID
+                                    )
+                                } else {
+                                    Log.d("PushService", "Downloaded and decrypted drawing, size=${rawBytes.size}")
+                                    LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
+                                    DrawingUpdateBus.notifyNewDrawing(rawBytes)
+
+                                    val title = dataTitle ?: "New Drawing"
+                                    val body = dataBody ?: "Your partner sent you a drawing!"
+                                    val drawingData = remoteMessage.data.toMutableMap().apply {
+                                        put("EXTRA_OPEN_PARTNER_DRAWING", "true")
+                                    }
+                                    sendNotification(
+                                        title = title,
+                                        body = body,
+                                        data = drawingData,
+                                        notificationId = NOTIFICATION_DRAWING_ID
+                                    )
+                                }
                             } else {
-                                Log.d("PushService", "No new drawing found")
+                                Log.d("PushService", "No new drawing or photo found")
                             }
                         }.onFailure { error ->
-                            Log.e("PushService", "Error downloading/decrypting drawing", error)
+                            Log.e("PushService", "Error downloading/decrypting drawing or photo", error)
+                            val title = dataTitle ?: "New Update"
+                            val body = dataBody ?: "Your partner sent an update!"
+                            sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                         }
                     } catch (e: Exception) {
                         Log.e("PushService", "Failed to fetch/update image", e)
+                        val title = dataTitle ?: "New Update"
+                        val body = dataBody ?: "Your partner sent an update!"
+                        sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                     }
                 }
             }
@@ -81,6 +132,10 @@ class PushNotificationService : FirebaseMessagingService() {
                         sessionManager.clearSession("Your partner has disconnected the pair")
                         LoveLetterWidget.clearWidgetSuspend(applicationContext)
                         DrawingUpdateBus.clear()
+                        try {
+                            File(applicationContext.filesDir, "latest_partner_photo.png").delete()
+                            File(applicationContext.filesDir, "partner_photo_view_once.flag").delete()
+                        } catch (_: Exception) {}
                     }
                 } else {
                     Log.w("FCM", "Zignorowano przestarzale PAIR_DISCONNECTED: $incomingPairId (aktywny: $currentPairId)")
@@ -97,10 +152,19 @@ class PushNotificationService : FirebaseMessagingService() {
                         try {
                             val repository = NetworkModule.getDrawingRepository(applicationContext)
                             val result = repository.getLatestDrawing()
-                            result.onSuccess { imageBytes ->
-                                if (imageBytes != null) {
-                                    LoveLetterWidget.updateWidgetImageSuspend(applicationContext, imageBytes)
-                                    DrawingUpdateBus.notifyNewDrawing(imageBytes)
+                            result.onSuccess { rawBytes ->
+                                if (rawBytes != null) {
+                                    if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
+                                        val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
+                                        val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
+                                        File(applicationContext.filesDir, "latest_partner_photo.png").writeBytes(photoBytes)
+                                        val flagFile = File(applicationContext.filesDir, "partner_photo_view_once.flag")
+                                        if (isViewOnce) flagFile.createNewFile() else flagFile.delete()
+                                        DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce)
+                                    } else {
+                                        LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
+                                        DrawingUpdateBus.notifyNewDrawing(rawBytes)
+                                    }
                                 }
                             }
                         } catch (_: Exception) {}
@@ -135,7 +199,9 @@ class PushNotificationService : FirebaseMessagingService() {
             data.forEach { (key, value) ->
                 putExtra(key, value)
             }
-            if (data["type"] == "NEW_DRAWING") {
+            if (data["EXTRA_OPEN_PARTNER_PHOTO"] == "true") {
+                putExtra("EXTRA_OPEN_PARTNER_PHOTO", true)
+            } else if (data["EXTRA_OPEN_PARTNER_DRAWING"] == "true" || data["type"] == "NEW_DRAWING") {
                 putExtra("EXTRA_OPEN_PARTNER_DRAWING", true)
             }
         }
@@ -176,5 +242,6 @@ class PushNotificationService : FirebaseMessagingService() {
         const val CHANNEL_ID = "love_letter_channel"
         const val NOTIFICATION_DRAWING_ID = 1
         const val NOTIFICATION_DISCONNECT_ID = 2
+        const val NOTIFICATION_PHOTO_ID = 3
     }
 }

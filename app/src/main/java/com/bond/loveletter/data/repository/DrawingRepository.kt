@@ -1,10 +1,12 @@
-﻿package com.bond.loveletter.data.repository
+package com.bond.loveletter.data.repository
 
 import com.bond.loveletter.data.crypto.CryptoManager
 import com.bond.loveletter.data.model.ConfirmDrawingRequest
 import com.bond.loveletter.data.network.LoveLetterApiService
 import com.bond.loveletter.data.network.NetworkClient
 import com.bond.loveletter.data.storage.SessionManager
+import com.bond.loveletter.util.DrawingPayloadUtils
+import com.bond.loveletter.util.ImageCompressor
 import com.bond.loveletter.util.toUserFriendlyMessage
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -18,20 +20,32 @@ class DrawingRepository(
 ) {
 
     suspend fun sendDrawing(pngBytes: ByteArray): Result<Unit> {
+        return sendEncryptedPayload(pngBytes)
+    }
+
+    suspend fun sendPhoto(photoBytes: ByteArray, isViewOnce: Boolean = false): Result<Unit> {
+        if (photoBytes.size > ImageCompressor.MAX_FILE_SIZE_BYTES) {
+            return Result.failure(IllegalStateException("Photo is too large (exceeds 5 MB limit)"))
+        }
+        val payload = DrawingPayloadUtils.wrapPhotoPayload(photoBytes, isViewOnce)
+        return sendEncryptedPayload(payload)
+    }
+
+    private suspend fun sendEncryptedPayload(plainBytes: ByteArray): Result<Unit> {
         return try {
             val partnerPublicKey = sessionManager.getPartnerPublicKey()
             if (partnerPublicKey.isNullOrBlank()) {
-                return Result.failure(IllegalStateException("Cannot send drawing: not paired with partner yet"))
+                return Result.failure(IllegalStateException("Cannot send: not paired with partner yet"))
             }
 
             val myPrivateKey = sessionManager.getMyPrivateKey()
             if (myPrivateKey.isNullOrBlank()) {
-                return Result.failure(IllegalStateException("Cannot send drawing: missing cryptographic key"))
+                return Result.failure(IllegalStateException("Cannot send: missing cryptographic key"))
             }
 
-            // 1. Encrypt drawing bytes using ECDH + AES-GCM
+            // 1. Encrypt payload bytes using ECDH + AES-GCM
             val encryptedPayload = CryptoManager.encryptDrawing(
-                plainBytes = pngBytes,
+                plainBytes = plainBytes,
                 partnerPublicKeyBase64 = partnerPublicKey,
                 myPrivateKeyBase64 = myPrivateKey
             )
@@ -39,11 +53,11 @@ class DrawingRepository(
             // 2. Request presigned upload URL from server
             val presignedResponse = apiService.getPresignedUploadUrl()
             if (presignedResponse.code() == 403) {
-                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected đź’”")
-                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected đź’”"))
+                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected")
+                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected"))
             }
             if (presignedResponse.code() == 429) {
-                return Result.failure(Exception("You're sending drawings too fast"));
+                return Result.failure(Exception("You're sending too fast"))
             }
             if (!presignedResponse.isSuccessful || presignedResponse.body() == null) {
                 return Result.failure(Exception("Failed to get upload URL: ${parseError(presignedResponse)}"))
@@ -69,8 +83,8 @@ class DrawingRepository(
                 )
             )
             if (confirmResponse.code() == 403) {
-                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected đź’”")
-                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected đź’”"))
+                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected")
+                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected"))
             }
             if (!confirmResponse.isSuccessful) {
                 return Result.failure(Exception("Confirmation failed: ${parseError(confirmResponse)}"))
@@ -93,8 +107,8 @@ class DrawingRepository(
             }
 
             if (response.code() == 403) {
-                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected đź’”")
-                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected đź’”"))
+                sessionManager.clearSession("You are not in an active pair. Your partner has disconnected")
+                return Result.failure(IllegalStateException("You are not in an active pair. Your partner has disconnected"))
             }
 
             if (!response.isSuccessful || response.body() == null) {

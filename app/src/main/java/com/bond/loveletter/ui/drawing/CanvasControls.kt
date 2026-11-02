@@ -70,7 +70,11 @@ fun ColumnScope.CanvasControls(
     onSetBrushType: (BrushType) -> Unit = {},
     onSetBrushLevel: (Int) -> Unit = {},
     currentBrushType: BrushType = BrushType.MARKER,
-    isSending: Boolean = false
+    isSending: Boolean = false,
+    onPickPhoto: () -> Unit = {},
+    isSendingPhoto: Boolean = false,
+    isViewOnceSelected: Boolean = false,
+    onToggleViewOnce: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var showOptions by remember { mutableStateOf(false) }
@@ -289,20 +293,20 @@ fun ColumnScope.CanvasControls(
             // 3. Undo, Redo, Clear, and Send actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Undo Button
                 OutlinedIconButton(
                     onClick = onUndo,
                     enabled = canUndo,
-                    modifier = Modifier.size(42.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.size(38.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_undo_24),
                         contentDescription = "Undo",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
@@ -310,47 +314,105 @@ fun ColumnScope.CanvasControls(
                 OutlinedIconButton(
                     onClick = onRedo,
                     enabled = canRedo,
-                    modifier = Modifier.size(42.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.size(38.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_redo_24),
                         contentDescription = "Redo",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 // Clear Canvas Button
                 OutlinedButton(
                     onClick = onClearCanvas,
-                    modifier = Modifier.height(42.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.height(38.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Clear", fontSize = 13.sp)
+                    Text("Clear", fontSize = 12.sp)
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                // Send Photo Button (Pick 1 photo, compress and send E2EE)
+                OutlinedIconButton(
+                    onClick = onPickPhoto,
+                    enabled = !isSending && !isSendingPhoto,
+                    modifier = Modifier.size(38.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    if (isSendingPhoto) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.outline_image_24),
+                            contentDescription = "Send Photo",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
 
-                // Send Drawing Button (Primary CTA)
+                // View Once Toggle Button ("①" - activates/deactivates view-once for photo)
+                FilledTonalIconButton(
+                    onClick = onToggleViewOnce,
+                    modifier = Modifier.size(38.dp),
+                    shape = CircleShape,
+                    colors = if (isViewOnceSelected) {
+                        IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                ) {
+                    Text(
+                        text = "①",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // Send Drawing Button (Primary CTA - expands to fill all remaining space without wrapping)
                 Button(
                     onClick = onSendAction,
-                    enabled = !isSending,
+                    enabled = !isSending && !isSendingPhoto,
                     modifier = Modifier
-                        .height(42.dp)
-                        .weight(1.8f),
-                    shape = RoundedCornerShape(12.dp),
+                        .height(38.dp)
+                        .weight(1f),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     if (isSending) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sending...", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Sending...",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     } else {
-                        Text("Send Drawing", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Send Drawing",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }

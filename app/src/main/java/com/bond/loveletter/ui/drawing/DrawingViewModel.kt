@@ -116,8 +116,23 @@ class DrawingViewModel(
     private val _downloadedImage = MutableStateFlow<ByteArray?>(null)
     val downloadedImage = _downloadedImage.asStateFlow()
 
+    private val _partnerPhoto = MutableStateFlow<ByteArray?>(null)
+    val partnerPhoto = _partnerPhoto.asStateFlow()
+
+    private val _isPartnerPhotoViewOnce = MutableStateFlow(false)
+    val isPartnerPhotoViewOnce = _isPartnerPhotoViewOnce.asStateFlow()
+
+    private val _isViewOnceSelected = MutableStateFlow(false)
+    val isViewOnceSelected = _isViewOnceSelected.asStateFlow()
+
     private val _showPartnerArt = MutableStateFlow(false)
     val showPartnerArt = _showPartnerArt.asStateFlow()
+
+    private val _showPartnerPhoto = MutableStateFlow(false)
+    val showPartnerPhoto = _showPartnerPhoto.asStateFlow()
+
+    private val _isSendingPhoto = MutableStateFlow(false)
+    val isSendingPhoto = _isSendingPhoto.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -125,6 +140,16 @@ class DrawingViewModel(
                 _downloadedImage.value = bytes
             }
         }
+        viewModelScope.launch {
+            DrawingUpdateBus.photoUpdates.collect { update ->
+                _partnerPhoto.value = update.bytes
+                _isPartnerPhotoViewOnce.value = update.isViewOnce
+            }
+        }
+    }
+
+    fun toggleViewOnce() {
+        _isViewOnceSelected.update { !it }
     }
 
     fun openPartnerArt() {
@@ -133,6 +158,26 @@ class DrawingViewModel(
 
     fun closePartnerArt() {
         _showPartnerArt.value = false
+    }
+
+    fun openPartnerPhoto() {
+        _showPartnerPhoto.value = true
+    }
+
+    fun closePartnerPhoto(context: android.content.Context? = null) {
+        _showPartnerPhoto.value = false
+        if (_isPartnerPhotoViewOnce.value) {
+            _partnerPhoto.value = null
+            _isPartnerPhotoViewOnce.value = false
+            if (context != null) {
+                viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        java.io.File(context.filesDir, "latest_partner_photo.png").delete()
+                        java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
+                    } catch (_: Exception) {}
+                }
+            }
+        }
     }
 
     private fun isVisuallyEqual(a: DrawingState, b: DrawingState): Boolean {
@@ -308,9 +353,17 @@ class DrawingViewModel(
         updateUndoRedo()
         _state.value = DrawingState()
         _downloadedImage.value = null
+        _partnerPhoto.value = null
+        _isPartnerPhotoViewOnce.value = false
+        _isViewOnceSelected.value = false
         _showPartnerArt.value = false
-        viewModelScope.launch {
+        _showPartnerPhoto.value = false
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             CanvasStorage.clearHistory(context)
+            try {
+                java.io.File(context.filesDir, "latest_partner_photo.png").delete()
+                java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
+            } catch (_: Exception) {}
         }
     }
 
@@ -328,6 +381,21 @@ class DrawingViewModel(
         }
     }
 
+    suspend fun uploadPhoto(photoByteArray: ByteArray): Result<Unit> {
+        _isSendingPhoto.value = true
+        val isViewOnce = _isViewOnceSelected.value
+        return try {
+            val result = repository.sendPhoto(photoByteArray, isViewOnce = isViewOnce)
+            delay(1000L)
+            result
+        } catch (e: Exception) {
+            delay(1000L)
+            Result.failure(e)
+        } finally {
+            _isSendingPhoto.value = false
+        }
+    }
+
     fun fetchLatestDrawing() {
         viewModelScope.launch {
             _isFetching.value = true
@@ -335,7 +403,14 @@ class DrawingViewModel(
                 val result = repository.getLatestDrawing()
                 result.onSuccess { bytes ->
                     if (bytes != null) {
-                        _downloadedImage.value = bytes
+                        if (com.bond.loveletter.util.DrawingPayloadUtils.isPhotoPayload(bytes)) {
+                            val isOnce = com.bond.loveletter.util.DrawingPayloadUtils.isViewOncePhoto(bytes)
+                            val photoBytes = com.bond.loveletter.util.DrawingPayloadUtils.extractPhotoBytes(bytes)
+                            _partnerPhoto.value = photoBytes
+                            _isPartnerPhotoViewOnce.value = isOnce
+                        } else {
+                            _downloadedImage.value = bytes
+                        }
                     }
                 }
             } finally {
@@ -345,14 +420,25 @@ class DrawingViewModel(
     }
 
     fun loadCachedImage(context: android.content.Context) {
-        if (_downloadedImage.value != null) return
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
-                val file = java.io.File(context.filesDir, "latest_widget_image.png")
-                if (file.exists()) {
-                    val bytes = file.readBytes()
-                    if (bytes.isNotEmpty()) {
-                        _downloadedImage.value = bytes
+                if (_downloadedImage.value == null) {
+                    val file = java.io.File(context.filesDir, "latest_widget_image.png")
+                    if (file.exists()) {
+                        val bytes = file.readBytes()
+                        if (bytes.isNotEmpty()) {
+                            _downloadedImage.value = bytes
+                        }
+                    }
+                }
+                if (_partnerPhoto.value == null) {
+                    val photoFile = java.io.File(context.filesDir, "latest_partner_photo.png")
+                    if (photoFile.exists()) {
+                        val bytes = photoFile.readBytes()
+                        if (bytes.isNotEmpty()) {
+                            _partnerPhoto.value = bytes
+                            _isPartnerPhotoViewOnce.value = java.io.File(context.filesDir, "partner_photo_view_once.flag").exists()
+                        }
                     }
                 }
             } catch (e: Exception) {

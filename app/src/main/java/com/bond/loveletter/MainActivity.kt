@@ -6,8 +6,10 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.bond.loveletter.data.storage.AuthState
@@ -49,6 +52,7 @@ import com.bond.loveletter.ui.drawing.DrawingCanvas
 import com.bond.loveletter.ui.drawing.DrawingViewModel
 import com.bond.loveletter.ui.drawing.flattenedColors
 import com.bond.loveletter.ui.theme.LoveLetterTheme
+import com.bond.loveletter.util.ImageCompressor
 import com.bond.loveletter.util.saveImageToGallery
 import com.bond.loveletter.util.toPngByteArray
 import com.bond.loveletter.util.toUserFriendlyMessage
@@ -150,7 +154,12 @@ class MainActivity : ComponentActivity() {
         if (intent == null) return
         val type = intent.getStringExtra("type")
         val openArt = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_DRAWING", false)
-        if (type == "NEW_DRAWING" || openArt) {
+        val openPhoto = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_PHOTO", false)
+        if (openPhoto) {
+            drawingViewModel.openPartnerPhoto()
+            drawingViewModel.fetchLatestDrawing()
+            intent.removeExtra("EXTRA_OPEN_PARTNER_PHOTO")
+        } else if (type == "NEW_DRAWING" || openArt) {
             drawingViewModel.openPartnerArt()
             drawingViewModel.fetchLatestDrawing()
             intent.removeExtra("type")
@@ -199,7 +208,12 @@ fun DrawingMainScreen(
     val isSending by drawingViewModel.isSending.collectAsStateWithLifecycle()
     val isFetching by drawingViewModel.isFetching.collectAsStateWithLifecycle()
     val downloadedImage by drawingViewModel.downloadedImage.collectAsStateWithLifecycle()
+    val partnerPhoto by drawingViewModel.partnerPhoto.collectAsStateWithLifecycle()
+    val isPartnerPhotoViewOnce by drawingViewModel.isPartnerPhotoViewOnce.collectAsStateWithLifecycle()
+    val isViewOnceSelected by drawingViewModel.isViewOnceSelected.collectAsStateWithLifecycle()
     val showPartnerDrawingDialog by drawingViewModel.showPartnerArt.collectAsStateWithLifecycle()
+    val showPartnerPhotoDialog by drawingViewModel.showPartnerPhoto.collectAsStateWithLifecycle()
+    val isSendingPhoto by drawingViewModel.isSendingPhoto.collectAsStateWithLifecycle()
     val canUndo by drawingViewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by drawingViewModel.canRedo.collectAsStateWithLifecycle()
     val graphicsLayer = rememberGraphicsLayer()
@@ -214,6 +228,41 @@ fun DrawingMainScreen(
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
             } catch (e: Exception) {
                 null
+            }
+        }
+    }
+
+    val partnerPhotoBitmap = remember(partnerPhoto) {
+        partnerPhoto?.let { bytes ->
+            try {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val compressedBytes = withContext(Dispatchers.IO) {
+                        ImageCompressor.processAndCompressImage(context.applicationContext, uri)
+                    }
+                    val result = drawingViewModel.uploadPhoto(compressedBytes)
+                    result.onSuccess {
+                        Toast.makeText(context, "Photo sent!", Toast.LENGTH_SHORT).show()
+                    }
+                    result.onFailure { error ->
+                        val msg = error.toUserFriendlyMessage()
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    val msg = e.localizedMessage ?: "Failed to process photo"
+                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -391,16 +440,128 @@ fun DrawingMainScreen(
         }
     }
 
+    if (showPartnerPhotoDialog) {
+        Dialog(
+            onDismissRequest = { drawingViewModel.closePartnerPhoto(context) },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                securePolicy = if (isPartnerPhotoViewOnce) SecureFlagPolicy.SecureOn else SecureFlagPolicy.Inherit
+            )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Black.copy(alpha = 0.94f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = if (isPartnerPhotoViewOnce) "Partner's Photo ①" else "Partner's Photo",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (isPartnerPhotoViewOnce) {
+                                Text(
+                                    text = "View once — will be deleted when closed",
+                                    color = Color.White.copy(alpha = 0.65f),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                        TextButton(onClick = { drawingViewModel.closePartnerPhoto(context) }) {
+                            Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (partnerPhotoBitmap != null) {
+                        val photoAspectRatio = remember(partnerPhotoBitmap) {
+                            if (partnerPhotoBitmap.height > 0) {
+                                partnerPhotoBitmap.width.toFloat() / partnerPhotoBitmap.height.toFloat()
+                            } else 1f
+                        }
+
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val containerAspect = maxWidth / maxHeight
+                            val imageModifier = if (containerAspect > photoAspectRatio) {
+                                Modifier
+                                    .fillMaxHeight()
+                                    .width(maxHeight * photoAspectRatio)
+                            } else {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(maxWidth / photoAspectRatio)
+                            }
+
+                            Box(
+                                modifier = imageModifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                            ) {
+                                Image(
+                                    bitmap = partnerPhotoBitmap,
+                                    contentDescription = "Full Screen Partner Photo",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = "Loading partner's photo...",
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { drawingViewModel.closePartnerPhoto(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Back to Drawing Canvas")
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "LoveLetter",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
                 },
                 actions = {
                     if (partnerBitmap != null) {
@@ -411,6 +572,22 @@ fun DrawingMainScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Text("Partner's Art", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    if (partnerPhotoBitmap != null) {
+                        FilledTonalButton(
+                            onClick = { drawingViewModel.openPartnerPhoto() },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(end = 4.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = if (isPartnerPhotoViewOnce) "Partner's Photo ①" else "Partner's Photo",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isPartnerPhotoViewOnce) MaterialTheme.colorScheme.primary else Color.Unspecified
+                            )
                         }
                     }
 
@@ -488,6 +665,12 @@ fun DrawingMainScreen(
                 brushThickness = state.brushThickness,
                 currentBrushType = state.brushType,
                 isSending = isSending,
+                onPickPhoto = {
+                    photoPickerLauncher.launch("image/*")
+                },
+                isSendingPhoto = isSendingPhoto,
+                isViewOnceSelected = isViewOnceSelected,
+                onToggleViewOnce = { drawingViewModel.toggleViewOnce() },
                 modifier = Modifier.fillMaxWidth()
             )
         }
