@@ -4,15 +4,47 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class ApiErrorCode {
+    VALIDATION_ERROR,
+    INVALID_INPUT,
+    UNAUTHORIZED,
+    TOKEN_REVOKED,
+    FORBIDDEN,
+    NOT_IN_PAIR,
+    PAIR_NOT_FOUND,
+    PAIR_FULL,
+    PAIR_RACE_CONDITION,
+    PAIR_GENERATION_FAILED,
+    DRAWING_NOT_FOUND,
+    INVALID_FILE_KEY,
+    FILE_NOT_FOUND,
+    FILE_TOO_LARGE,
+    FCM_TOKEN_REQUIRED,
+    RATE_LIMIT_EXCEEDED,
+    INTERNAL_ERROR,
+    UNKNOWN
+}
+
+@Serializable
 data class MessageResponse(
     @SerialName("message") val message: String
 )
 
 @Serializable
 data class ApiErrorResponse(
-    @SerialName("error") val error: String,
-    @SerialName("status") val status: Int
-)
+    @SerialName("code") val code: String? = null,
+    @SerialName("error") val error: String? = null,
+    @SerialName("status") val status: Int? = null
+) {
+    val apiErrorCode: ApiErrorCode
+        get() = code?.let {
+            try {
+                ApiErrorCode.valueOf(it)
+            } catch (_: Exception) {
+                ApiErrorCode.UNKNOWN
+            }
+        } ?: ApiErrorCode.UNKNOWN
+}
 
 @Serializable
 data class AnonymousRegisterRequest(

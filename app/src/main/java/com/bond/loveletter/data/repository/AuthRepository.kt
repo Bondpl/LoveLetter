@@ -2,12 +2,10 @@ package com.bond.loveletter.data.repository
 
 import com.bond.loveletter.data.model.*
 import com.bond.loveletter.data.network.LoveLetterApiService
-import com.bond.loveletter.data.network.NetworkClient
 import com.bond.loveletter.data.storage.SessionManager
-import com.bond.loveletter.util.toUserFriendlyMessage
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import retrofit2.Response
+import com.bond.loveletter.util.AppException
+import com.bond.loveletter.util.toApiException
+import com.bond.loveletter.util.toAppException
 
 class AuthRepository(
     private val apiService: LoveLetterApiService,
@@ -33,22 +31,21 @@ class AuthRepository(
                 }
                 Result.success(authData)
             } else {
-                if ((response.code() == 401 || response.code() == 403 || response.code() == 404) && sessionManager.isPaired()) {
-                    sessionManager.clearSession()
-                }
-                Result.failure(Exception(parseError(response)))
+                val apiEx = response.toApiException()
+                Result.failure(apiEx)
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.toUserFriendlyMessage(), e))
+            Result.failure(e.toAppException())
         }
     }
 
     suspend fun joinPair(pairCode: String): Result<JoinPairResponse> {
+        val cleanCode = pairCode.trim()
+        if (cleanCode.length != 6) {
+            return Result.failure(AppException.General("Pair code must be 6 digits"))
+        }
+
         return try {
-            val cleanCode = pairCode.trim()
-            if (cleanCode.isBlank()) {
-                return Result.failure(IllegalArgumentException("Pair code cannot be empty"))
-            }
             val (publicKey, _) = sessionManager.getOrCreateKeyPair()
             val response = apiService.joinPair(JoinPairRequest(pairCode = cleanCode, publicKey = publicKey))
             if (response.isSuccessful && response.body() != null) {
@@ -67,13 +64,11 @@ class AuthRepository(
                 }
                 Result.success(joinData)
             } else {
-                if ((response.code() == 401 || response.code() == 403 || response.code() == 404) && sessionManager.isPaired()) {
-                    sessionManager.clearSession()
-                }
-                Result.failure(Exception(parseError(response)))
+                val apiEx = response.toApiException()
+                Result.failure(apiEx)
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.toUserFriendlyMessage(), e))
+            Result.failure(e.toAppException())
         }
     }
 
@@ -95,27 +90,23 @@ class AuthRepository(
                 }
                 Result.success(statusData)
             } else {
-                if ((response.code() == 401 || response.code() == 403 || response.code() == 404) && sessionManager.isPaired()) {
-                    sessionManager.clearSession()
+                val apiEx = response.toApiException()
+                if ((apiEx.errorCode == ApiErrorCode.NOT_IN_PAIR || apiEx.errorCode == ApiErrorCode.TOKEN_REVOKED) && sessionManager.isPaired()) {
+                    sessionManager.clearSession("Your partner has disconnected or session expired")
                 }
-                Result.failure(Exception(parseError(response)))
+                Result.failure(apiEx)
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.toUserFriendlyMessage(), e))
+            Result.failure(e.toAppException())
         }
     }
 
     suspend fun leavePair(): Result<Unit> {
+        sessionManager.clearSession()
         return try {
-            val response = apiService.leavePair()
-            sessionManager.clearSession()
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.success(Unit) // Still clear local session on failure
-            }
+            apiService.leavePair()
+            Result.success(Unit)
         } catch (e: Exception) {
-            sessionManager.clearSession()
             Result.success(Unit)
         }
     }
@@ -130,29 +121,14 @@ class AuthRepository(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                if ((response.code() == 401 || response.code() == 403 || response.code() == 404) && sessionManager.isPaired()) {
+                val apiEx = response.toApiException()
+                if ((apiEx.errorCode == ApiErrorCode.NOT_IN_PAIR || apiEx.errorCode == ApiErrorCode.TOKEN_REVOKED) && sessionManager.isPaired()) {
                     sessionManager.clearSession()
                 }
-                Result.failure(Exception(parseError(response)))
+                Result.failure(apiEx)
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.toUserFriendlyMessage(), e))
-        }
-    }
-
-    private fun <T> parseError(response: Response<T>): String {
-        return try {
-            val errorJson = response.errorBody()?.string()
-            if (!errorJson.isNullOrBlank()) {
-                val element = NetworkClient.json.parseToJsonElement(errorJson)
-                val obj = element as? JsonObject
-                val err = obj?.get("error")?.jsonPrimitive?.content
-                err ?: errorJson
-            } else {
-                response.message().ifBlank { "HTTP error ${response.code()}" }
-            }
-        } catch (e: Exception) {
-            response.message().ifBlank { "HTTP error ${response.code()}" }
+            Result.failure(e.toAppException())
         }
     }
 }
