@@ -19,12 +19,27 @@ class DrawingRepository(
 ) {
 
     suspend fun sendDrawing(pngBytes: ByteArray): Result<Unit> {
+        if (pngBytes.size > ImageCompressor.MAX_FILE_SIZE_BYTES) {
+            return Result.failure(
+                AppException.Api(
+                    errorCode = ApiErrorCode.FILE_TOO_LARGE,
+                    serverMessage = "Drawing is too large (exceeds 5 MB limit)",
+                    httpStatus = 400
+                )
+            )
+        }
         return sendEncryptedPayload(pngBytes)
     }
 
     suspend fun sendPhoto(photoBytes: ByteArray, isViewOnce: Boolean = false): Result<Unit> {
         if (photoBytes.size > ImageCompressor.MAX_FILE_SIZE_BYTES) {
-            return Result.failure(AppException.General("Photo is too large (exceeds 5 MB limit)"))
+            return Result.failure(
+                AppException.Api(
+                    errorCode = ApiErrorCode.FILE_TOO_LARGE,
+                    serverMessage = "Photo is too large (exceeds 5 MB limit)",
+                    httpStatus = 400
+                )
+            )
         }
         val payload = DrawingPayloadUtils.wrapPhotoPayload(photoBytes, isViewOnce)
         return sendEncryptedPayload(payload)

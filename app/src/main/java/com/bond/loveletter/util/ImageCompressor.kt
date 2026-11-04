@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import android.util.Log
+import com.bond.loveletter.data.model.ApiErrorCode
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -76,22 +77,47 @@ object ImageCompressor {
                 bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
             }
 
-            // 7. Compress with quality 85 (excellent quality, small payload ~300-800 KB)
+            // 7. Compress initial JPEG with high quality (85)
             var quality = 85
             var stream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+            var currentBitmap = bitmap
+            currentBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
             var resultBytes = stream.toByteArray()
 
-            // 8. Enforce <= 5 MB limit (re-compress if needed)
-            while (resultBytes.size > MAX_FILE_SIZE_BYTES && quality > 30) {
-                quality -= 15
+            // 8. Progressive Smart Downscaling & Quality Adjustment
+            // If file exceeds 5 MB limit, iteratively scale down resolution and adjust quality
+            var attempts = 0
+            while (resultBytes.size > MAX_FILE_SIZE_BYTES && attempts < 6) {
+                attempts++
+                if (quality > 65) {
+                    quality -= 10
+                } else {
+                    // Downscale image dimensions by 25% (reduces pixel count & memory by ~44%)
+                    val scaleFactor = 0.75f
+                    val nextW = max(320, (currentBitmap.width * scaleFactor).toInt())
+                    val nextH = max(320, (currentBitmap.height * scaleFactor).toInt())
+                    if (nextW < currentBitmap.width && nextH < currentBitmap.height) {
+                        val scaled = Bitmap.createScaledBitmap(currentBitmap, nextW, nextH, true)
+                        if (currentBitmap !== bitmap) {
+                            currentBitmap.recycle()
+                        }
+                        currentBitmap = scaled
+                        quality = 80 // Reset quality on smaller resolution to keep it visually sharp
+                    } else {
+                        quality -= 15
+                    }
+                }
                 stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+                currentBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
                 resultBytes = stream.toByteArray()
             }
 
             if (resultBytes.size > MAX_FILE_SIZE_BYTES) {
-                throw IllegalStateException("Image exceeds 5 MB limit after compression")
+                throw AppException.Api(
+                    errorCode = ApiErrorCode.FILE_TOO_LARGE,
+                    serverMessage = "Image is too large to compress under 5 MB limit",
+                    httpStatus = 400
+                )
             }
 
             return resultBytes
