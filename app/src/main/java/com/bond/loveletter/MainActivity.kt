@@ -1,6 +1,7 @@
 package com.bond.loveletter
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         enableEdgeToEdge()
 
         handleNotificationIntent(intent)
