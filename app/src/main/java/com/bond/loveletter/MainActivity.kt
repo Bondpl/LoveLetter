@@ -55,6 +55,7 @@ import com.bond.loveletter.ui.drawing.flattenedColors
 import com.bond.loveletter.ui.theme.LoveLetterTheme
 import com.bond.loveletter.util.ImageCompressor
 import com.bond.loveletter.util.saveImageToGallery
+import com.bond.loveletter.util.savePhotoToGallery
 import com.bond.loveletter.util.toPngByteArray
 import com.bond.loveletter.util.toUserFriendlyMessage
 import com.bond.loveletter.widget.LoveLetterWidget
@@ -483,8 +484,39 @@ fun DrawingMainScreen(
                                 )
                             }
                         }
-                        TextButton(onClick = { drawingViewModel.closePartnerPhoto(context) }) {
-                            Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (!isPartnerPhotoViewOnce && partnerPhoto != null) {
+                                IconButton(
+                                    onClick = {
+                                        scope.launch(Dispatchers.IO) {
+                                            val success = savePhotoToGallery(context, partnerPhoto!!)
+                                            withContext(Dispatchers.Main) {
+                                                Toast.makeText(
+                                                    context,
+                                                    if (success) "Photo saved to gallery!" else "Failed to save photo",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(Color.White.copy(alpha = 0.15f), CircleShape)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.outline_download_24),
+                                        contentDescription = "Download photo to phone",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            TextButton(onClick = { drawingViewModel.closePartnerPhoto(context) }) {
+                                Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 

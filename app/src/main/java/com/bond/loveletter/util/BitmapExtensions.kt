@@ -120,3 +120,49 @@ fun saveImageToGallery(context: Context, imageBytes: ByteArray): Boolean {
         false
     }
 }
+
+fun savePhotoToGallery(context: Context, photoBytes: ByteArray): Boolean {
+    return try {
+        val filename = "LoveLetter_Photo_${System.currentTimeMillis()}.jpg"
+        val resolver = context.contentResolver
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "LoveLetter")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: return false
+
+            resolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(photoBytes)
+                outputStream.flush()
+            } ?: return false
+
+            contentValues.clear()
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            resolver.update(uri, contentValues, null, null)
+            true
+        } else {
+            @Suppress("DEPRECATION")
+            val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val folder = File(picturesDir, "LoveLetter").apply { if (!exists()) mkdirs() }
+            val file = File(folder, filename)
+            file.writeBytes(photoBytes)
+
+            val contentValues = ContentValues().apply {
+                @Suppress("DEPRECATION")
+                put(MediaStore.Images.Media.DATA, file.absolutePath)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            }
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            true
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
+    }
+}
