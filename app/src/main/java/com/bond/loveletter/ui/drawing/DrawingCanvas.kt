@@ -50,18 +50,21 @@ fun DrawingCanvas(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
             .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .padding(1.5.dp)
+            .clip(RoundedCornerShape(18.5.dp))
     ) {
         // Inner Canvas draws the rectangular background and paths; graphicsLayer records ONLY this clean canvas
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .background(backgroundColor)
                 .then(
                     if (graphicsLayer != null) {
                         Modifier.drawWithContent {
-                            graphicsLayer.record { this@drawWithContent.drawContent() }
+                            graphicsLayer.record {
+                                drawRect(color = backgroundColor)
+                                this@drawWithContent.drawContent()
+                            }
                             drawLayer(graphicsLayer)
                         }
                     } else Modifier
@@ -90,6 +93,9 @@ fun DrawingCanvas(
                     )
                 }
         ) {
+            // Ensure solid background is also drawn in normal canvas render
+            drawRect(color = backgroundColor)
+
             // Draw completed paths from cache
             paths.fastForEach { pathData ->
                 val cachedPath = pathCache.getOrPut(pathData.id) {

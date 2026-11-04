@@ -394,8 +394,10 @@ fun DrawingMainScreen(
 
                             Box(
                                 modifier = imageModifier
-                                    .clip(RoundedCornerShape(20.dp))
                                     .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                                    .padding(1.5.dp)
+                                    .clip(RoundedCornerShape(18.5.dp))
+                                    .background(Color.White)
                             ) {
                                 Image(
                                     bitmap = partnerBitmap,
@@ -512,8 +514,10 @@ fun DrawingMainScreen(
 
                             Box(
                                 modifier = imageModifier
-                                    .clip(RoundedCornerShape(20.dp))
                                     .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                                    .padding(1.5.dp)
+                                    .clip(RoundedCornerShape(18.5.dp))
+                                    .background(Color.White)
                             ) {
                                 Image(
                                     bitmap = partnerPhotoBitmap,
