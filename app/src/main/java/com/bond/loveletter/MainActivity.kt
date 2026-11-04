@@ -516,15 +516,13 @@ fun DrawingMainScreen(
 
                             Box(
                                 modifier = imageModifier
-                                    .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-                                    .padding(1.5.dp)
-                                    .clip(RoundedCornerShape(18.5.dp))
-                                    .background(Color.White)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
                             ) {
                                 Image(
                                     bitmap = partnerPhotoBitmap,
                                     contentDescription = "Full Screen Partner Photo",
-                                    contentScale = ContentScale.Fit,
+                                    contentScale = ContentScale.FillBounds,
                                     modifier = Modifier.fillMaxSize()
                                 )
                             }
