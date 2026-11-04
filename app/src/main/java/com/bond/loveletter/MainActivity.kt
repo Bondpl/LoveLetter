@@ -245,18 +245,25 @@ fun DrawingMainScreen(
         }
     }
 
+    var isViewOnceUpload by remember { mutableStateOf(false) }
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
+            val isOnce = isViewOnceUpload
             scope.launch {
                 try {
                     val compressedBytes = withContext(Dispatchers.IO) {
                         ImageCompressor.processAndCompressImage(context.applicationContext, uri)
                     }
-                    val result = drawingViewModel.uploadPhoto(compressedBytes)
+                    val result = drawingViewModel.uploadPhoto(compressedBytes, isViewOnce = isOnce)
                     result.onSuccess {
-                        Toast.makeText(context, "Photo sent!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            if (isOnce) "View-once photo sent!" else "Photo sent!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     result.onFailure { error ->
                         val msg = error.toUserFriendlyMessage()
@@ -471,7 +478,7 @@ fun DrawingMainScreen(
                     ) {
                         Column {
                             Text(
-                                text = if (isPartnerPhotoViewOnce) "Partner's Photo ①" else "Partner's Photo",
+                                text = "Partner's Photo",
                                 color = Color.White,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -701,12 +708,11 @@ fun DrawingMainScreen(
                 brushThickness = state.brushThickness,
                 currentBrushType = state.brushType,
                 isSending = isSending,
-                onPickPhoto = {
+                onPickPhoto = { isViewOnce ->
+                    isViewOnceUpload = isViewOnce
                     photoPickerLauncher.launch("image/*")
                 },
                 isSendingPhoto = isSendingPhoto,
-                isViewOnceSelected = isViewOnceSelected,
-                onToggleViewOnce = { drawingViewModel.toggleViewOnce() },
                 modifier = Modifier.fillMaxWidth()
             )
         }

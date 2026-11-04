@@ -381,9 +381,8 @@ class DrawingViewModel(
         }
     }
 
-    suspend fun uploadPhoto(photoByteArray: ByteArray): Result<Unit> {
+    suspend fun uploadPhoto(photoByteArray: ByteArray, isViewOnce: Boolean = false): Result<Unit> {
         _isSendingPhoto.value = true
-        val isViewOnce = _isViewOnceSelected.value
         return try {
             val result = repository.sendPhoto(photoByteArray, isViewOnce = isViewOnce)
             delay(1000L)

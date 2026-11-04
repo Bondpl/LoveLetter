@@ -23,6 +23,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -71,10 +73,8 @@ fun ColumnScope.CanvasControls(
     onSetBrushLevel: (Int) -> Unit = {},
     currentBrushType: BrushType = BrushType.MARKER,
     isSending: Boolean = false,
-    onPickPhoto: () -> Unit = {},
-    isSendingPhoto: Boolean = false,
-    isViewOnceSelected: Boolean = false,
-    onToggleViewOnce: () -> Unit = {}
+    onPickPhoto: (isViewOnce: Boolean) -> Unit = {},
+    isSendingPhoto: Boolean = false
 ) {
     val scrollState = rememberScrollState()
     var showOptions by remember { mutableStateOf(false) }
@@ -334,50 +334,64 @@ fun ColumnScope.CanvasControls(
                     Text("Clear", fontSize = 12.sp)
                 }
 
-                // Send Photo Button (Pick 1 photo, compress and send E2EE)
-                OutlinedIconButton(
-                    onClick = onPickPhoto,
-                    enabled = !isSending && !isSendingPhoto,
-                    modifier = Modifier.size(38.dp),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    if (isSendingPhoto) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = R.drawable.outline_image_24),
-                            contentDescription = "Send Photo",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
+                // Send Photo Button with Dropdown Menu (Standard vs View-Once ①)
+                var showPhotoMenu by remember { mutableStateOf(false) }
 
-                // View Once Toggle Button ("①" - activates/deactivates view-once for photo)
-                FilledTonalIconButton(
-                    onClick = onToggleViewOnce,
-                    modifier = Modifier.size(38.dp),
-                    shape = CircleShape,
-                    colors = if (isViewOnceSelected) {
-                        IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                Box {
+                    OutlinedIconButton(
+                        onClick = { showPhotoMenu = true },
+                        enabled = !isSending && !isSendingPhoto,
+                        modifier = Modifier.size(38.dp),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        if (isSendingPhoto) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = R.drawable.outline_image_24),
+                                contentDescription = "Send Photo",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = showPhotoMenu,
+                        onDismissRequest = { showPhotoMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Standard Photo", fontSize = 14.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.outline_image_24),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            onClick = {
+                                showPhotoMenu = false
+                                onPickPhoto(false)
+                            }
                         )
-                    } else {
-                        IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        DropdownMenuItem(
+                            text = { Text("View Once", fontSize = 14.sp) },
+                            leadingIcon = {
+                                Text(
+                                    text = "①",
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showPhotoMenu = false
+                                onPickPhoto(true)
+                            }
                         )
                     }
-                ) {
-                    Text(
-                        text = "①",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
 
                 // Send Drawing Button (Primary CTA - expands to fill all remaining space without wrapping)
