@@ -48,16 +48,23 @@ class PushNotificationService : FirebaseMessagingService() {
                     try {
                         val repository = NetworkModule.getDrawingRepository(applicationContext)
                         val result = repository.getLatestDrawing()
-                        result.onSuccess { rawBytes ->
-                            if (rawBytes != null) {
+                        result.onSuccess { payloadResult ->
+                            if (payloadResult != null) {
+                                val rawBytes = payloadResult.bytes
+                                val iv = payloadResult.iv
                                 if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
                                     val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
+                                    if (isViewOnce && sessionManager.isViewOnceConsumed(iv)) {
+                                        Log.d("PushService", "View-once photo $iv is already consumed, skipping.")
+                                        return@onSuccess
+                                    }
                                     val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
                                     Log.d("PushService", "Downloaded and decrypted photo (viewOnce=$isViewOnce), size=${photoBytes.size}")
 
                                     // 1. Save photo locally for partner photo viewer
                                     try {
                                         File(applicationContext.filesDir, "latest_partner_photo.png").writeBytes(photoBytes)
+                                        File(applicationContext.filesDir, "partner_photo.iv").writeText(iv)
                                         val flagFile = File(applicationContext.filesDir, "partner_photo_view_once.flag")
                                         if (isViewOnce) {
                                             flagFile.createNewFile()
@@ -69,7 +76,7 @@ class PushNotificationService : FirebaseMessagingService() {
                                     }
 
                                     // 2. Notify bus (do NOT touch widget!)
-                                    DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce)
+                                    DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce, iv)
 
                                     // 3. Send photo notification
                                     val title = if (isViewOnce) "View-Once Photo" else (dataTitle ?: "New Photo")
@@ -135,6 +142,7 @@ class PushNotificationService : FirebaseMessagingService() {
                         try {
                             File(applicationContext.filesDir, "latest_partner_photo.png").delete()
                             File(applicationContext.filesDir, "partner_photo_view_once.flag").delete()
+                            File(applicationContext.filesDir, "partner_photo.iv").delete()
                         } catch (_: Exception) {}
                     }
                 } else {
@@ -152,15 +160,21 @@ class PushNotificationService : FirebaseMessagingService() {
                         try {
                             val repository = NetworkModule.getDrawingRepository(applicationContext)
                             val result = repository.getLatestDrawing()
-                            result.onSuccess { rawBytes ->
-                                if (rawBytes != null) {
+                            result.onSuccess { payloadResult ->
+                                if (payloadResult != null) {
+                                    val rawBytes = payloadResult.bytes
+                                    val iv = payloadResult.iv
                                     if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
                                         val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
+                                        if (isViewOnce && sessionManager.isViewOnceConsumed(iv)) {
+                                            return@onSuccess
+                                        }
                                         val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
                                         File(applicationContext.filesDir, "latest_partner_photo.png").writeBytes(photoBytes)
+                                        File(applicationContext.filesDir, "partner_photo.iv").writeText(iv)
                                         val flagFile = File(applicationContext.filesDir, "partner_photo_view_once.flag")
                                         if (isViewOnce) flagFile.createNewFile() else flagFile.delete()
-                                        DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce)
+                                        DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce, iv)
                                     } else {
                                         LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
                                         DrawingUpdateBus.notifyNewDrawing(rawBytes)

@@ -13,6 +13,11 @@ import com.bond.loveletter.util.toAppException
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
+data class DrawingPayloadResult(
+    val bytes: ByteArray,
+    val iv: String
+)
+
 class DrawingRepository(
     private val apiService: LoveLetterApiService,
     private val sessionManager: SessionManager
@@ -109,7 +114,7 @@ class DrawingRepository(
         }
     }
 
-    suspend fun getLatestDrawing(): Result<ByteArray?> {
+    suspend fun getLatestDrawing(): Result<DrawingPayloadResult?> {
         return try {
             // 1. Query backend for partner's latest drawing
             val response = apiService.getLatestDrawing()
@@ -129,6 +134,11 @@ class DrawingRepository(
             }
 
             val drawingData = response.body()!!.drawingUrl
+
+            // If this drawing has already been consumed as a view-once photo:
+            if (sessionManager.isViewOnceConsumed(drawingData.iv)) {
+                return Result.success(null)
+            }
 
             // 2. Download encrypted payload from S3/Image URL
             val downloadResponse = apiService.downloadImage(drawingData.imageUrl)
@@ -156,7 +166,11 @@ class DrawingRepository(
                 myPrivateKeyBase64 = myPrivateKey
             )
 
-            Result.success(decryptedBytes)
+            if (DrawingPayloadUtils.isViewOncePhoto(decryptedBytes) && sessionManager.isViewOnceConsumed(drawingData.iv)) {
+                return Result.success(null)
+            }
+
+            Result.success(DrawingPayloadResult(bytes = decryptedBytes, iv = drawingData.iv))
         } catch (e: Exception) {
             Result.failure(e.toAppException())
         }

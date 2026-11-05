@@ -92,7 +92,8 @@ sealed interface DrawingAction {
 }
 
 class DrawingViewModel(
-    private val repository: DrawingRepository = NetworkModule.getDrawingRepository()
+    private val repository: DrawingRepository = NetworkModule.getDrawingRepository(),
+    private val sessionManager: SessionManager = NetworkModule.getSessionManager()
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DrawingState())
@@ -122,6 +123,8 @@ class DrawingViewModel(
     private val _isPartnerPhotoViewOnce = MutableStateFlow(false)
     val isPartnerPhotoViewOnce = _isPartnerPhotoViewOnce.asStateFlow()
 
+    private var currentPhotoIv: String? = null
+
     private val _isViewOnceSelected = MutableStateFlow(false)
     val isViewOnceSelected = _isViewOnceSelected.asStateFlow()
 
@@ -142,8 +145,12 @@ class DrawingViewModel(
         }
         viewModelScope.launch {
             DrawingUpdateBus.photoUpdates.collect { update ->
+                if (update.isViewOnce && !update.iv.isNullOrBlank() && sessionManager.isViewOnceConsumed(update.iv)) {
+                    return@collect
+                }
                 _partnerPhoto.value = update.bytes
                 _isPartnerPhotoViewOnce.value = update.isViewOnce
+                currentPhotoIv = update.iv
             }
         }
     }
@@ -162,20 +169,30 @@ class DrawingViewModel(
 
     fun openPartnerPhoto() {
         _showPartnerPhoto.value = true
+        if (_isPartnerPhotoViewOnce.value) {
+            val iv = currentPhotoIv
+            if (!iv.isNullOrBlank()) {
+                sessionManager.markViewOnceConsumed(iv)
+            }
+        }
     }
 
     fun closePartnerPhoto(context: android.content.Context? = null) {
         _showPartnerPhoto.value = false
         if (_isPartnerPhotoViewOnce.value) {
+            val iv = currentPhotoIv
+            if (!iv.isNullOrBlank()) {
+                sessionManager.markViewOnceConsumed(iv)
+            }
             _partnerPhoto.value = null
             _isPartnerPhotoViewOnce.value = false
+            currentPhotoIv = null
             if (context != null) {
-                viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                    try {
-                        java.io.File(context.filesDir, "latest_partner_photo.png").delete()
-                        java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
-                    } catch (_: Exception) {}
-                }
+                try {
+                    java.io.File(context.filesDir, "latest_partner_photo.png").delete()
+                    java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
+                    java.io.File(context.filesDir, "partner_photo.iv").delete()
+                } catch (_: Exception) {}
             }
         }
     }
@@ -363,6 +380,7 @@ class DrawingViewModel(
             try {
                 java.io.File(context.filesDir, "latest_partner_photo.png").delete()
                 java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
+                java.io.File(context.filesDir, "partner_photo.iv").delete()
             } catch (_: Exception) {}
         }
     }
@@ -400,13 +418,19 @@ class DrawingViewModel(
             _isFetching.value = true
             try {
                 val result = repository.getLatestDrawing()
-                result.onSuccess { bytes ->
-                    if (bytes != null) {
+                result.onSuccess { payloadResult ->
+                    if (payloadResult != null) {
+                        val bytes = payloadResult.bytes
+                        val iv = payloadResult.iv
                         if (com.bond.loveletter.util.DrawingPayloadUtils.isPhotoPayload(bytes)) {
                             val isOnce = com.bond.loveletter.util.DrawingPayloadUtils.isViewOncePhoto(bytes)
+                            if (isOnce && sessionManager.isViewOnceConsumed(iv)) {
+                                return@onSuccess
+                            }
                             val photoBytes = com.bond.loveletter.util.DrawingPayloadUtils.extractPhotoBytes(bytes)
                             _partnerPhoto.value = photoBytes
                             _isPartnerPhotoViewOnce.value = isOnce
+                            currentPhotoIv = iv
                         } else {
                             _downloadedImage.value = bytes
                         }
@@ -432,11 +456,21 @@ class DrawingViewModel(
                 }
                 if (_partnerPhoto.value == null) {
                     val photoFile = java.io.File(context.filesDir, "latest_partner_photo.png")
+                    val ivFile = java.io.File(context.filesDir, "partner_photo.iv")
+                    val cachedIv = if (ivFile.exists()) ivFile.readText().trim() else null
+                    val isViewOnce = java.io.File(context.filesDir, "partner_photo_view_once.flag").exists()
                     if (photoFile.exists()) {
-                        val bytes = photoFile.readBytes()
-                        if (bytes.isNotEmpty()) {
-                            _partnerPhoto.value = bytes
-                            _isPartnerPhotoViewOnce.value = java.io.File(context.filesDir, "partner_photo_view_once.flag").exists()
+                        if (isViewOnce && !cachedIv.isNullOrBlank() && sessionManager.isViewOnceConsumed(cachedIv)) {
+                            photoFile.delete()
+                            ivFile.delete()
+                            java.io.File(context.filesDir, "partner_photo_view_once.flag").delete()
+                        } else {
+                            val bytes = photoFile.readBytes()
+                            if (bytes.isNotEmpty()) {
+                                _partnerPhoto.value = bytes
+                                _isPartnerPhotoViewOnce.value = isViewOnce
+                                currentPhotoIv = cachedIv
+                            }
                         }
                     }
                 }

@@ -172,6 +172,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
+        if (drawingViewModel.isPartnerPhotoViewOnce.value && drawingViewModel.showPartnerPhoto.value) {
+            drawingViewModel.closePartnerPhoto(this)
+        }
         if (authViewModel.authState.value is AuthState.Paired) {
             lifecycleScope.launch(Dispatchers.IO) {
                 try {

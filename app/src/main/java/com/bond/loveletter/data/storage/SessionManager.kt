@@ -148,10 +148,24 @@ class SessionManager private constructor(context: Context) {
             .remove(KEY_MY_PUBLIC_KEY)
             .remove(KEY_MY_PRIVATE_KEY)
             .remove(KEY_PAIR_ID)
+            .remove(KEY_CONSUMED_VIEW_ONCE)
             .apply()
         _lastDisconnectReason.value = reason
         LoveLetterWidget.clearWidget(appContext)
         refreshAuthState()
+    }
+
+    fun isViewOnceConsumed(iv: String?): Boolean {
+        if (iv.isNullOrBlank()) return false
+        val set = prefs.getStringSet(KEY_CONSUMED_VIEW_ONCE, emptySet()) ?: emptySet()
+        return set.contains(iv)
+    }
+
+    fun markViewOnceConsumed(iv: String?) {
+        if (iv.isNullOrBlank()) return
+        val set = prefs.getStringSet(KEY_CONSUMED_VIEW_ONCE, emptySet())?.toMutableSet() ?: mutableSetOf()
+        set.add(iv)
+        prefs.edit().putStringSet(KEY_CONSUMED_VIEW_ONCE, set).commit()
     }
 
     fun consumeDisconnectReason(): String? {
@@ -175,6 +189,7 @@ class SessionManager private constructor(context: Context) {
         private const val KEY_MY_PRIVATE_KEY = "my_private_key"
         private const val KEY_PARTNER_PUBLIC_KEY = "partner_public_key"
         private const val KEY_FCM_TOKEN = "fcm_token"
+        private const val KEY_CONSUMED_VIEW_ONCE = "consumed_view_once_ids"
 
         @Volatile
         private var INSTANCE: SessionManager? = null

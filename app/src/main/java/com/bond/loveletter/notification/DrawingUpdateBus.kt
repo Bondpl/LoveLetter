@@ -6,7 +6,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 
 data class PhotoUpdate(
     val bytes: ByteArray,
-    val isViewOnce: Boolean
+    val isViewOnce: Boolean,
+    val iv: String? = null
 )
 
 object DrawingUpdateBus {
@@ -20,8 +21,8 @@ object DrawingUpdateBus {
         _drawingUpdates.tryEmit(imageBytes)
     }
 
-    fun notifyNewPhoto(imageBytes: ByteArray, isViewOnce: Boolean = false) {
-        _photoUpdates.tryEmit(PhotoUpdate(imageBytes, isViewOnce))
+    fun notifyNewPhoto(imageBytes: ByteArray, isViewOnce: Boolean = false, iv: String? = null) {
+        _photoUpdates.tryEmit(PhotoUpdate(imageBytes, isViewOnce, iv))
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
