@@ -15,6 +15,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -156,8 +157,10 @@ class MainActivity : ComponentActivity() {
     private fun handleNotificationIntent(intent: Intent?) {
         if (intent == null) return
         val type = intent.getStringExtra("type")
-        val openArt = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_DRAWING", false)
-        val openPhoto = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_PHOTO", false)
+        val openArt = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_DRAWING", false) ||
+                intent.getStringExtra("EXTRA_OPEN_PARTNER_DRAWING") == "true"
+        val openPhoto = intent.getBooleanExtra("EXTRA_OPEN_PARTNER_PHOTO", false) ||
+                intent.getStringExtra("EXTRA_OPEN_PARTNER_PHOTO") == "true"
         if (openPhoto) {
             drawingViewModel.openPartnerPhoto()
             drawingViewModel.fetchLatestDrawing()
@@ -248,33 +251,38 @@ fun DrawingMainScreen(
         }
     }
 
-    var isViewOnceUpload by remember { mutableStateOf(false) }
+    var pendingPhotoBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var pendingPhotoBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var isPreviewPhotoViewOnce by remember { mutableStateOf(false) }
+    var showPhotoPreviewDialog by remember { mutableStateOf(false) }
+    var isProcessingPhoto by remember { mutableStateOf(false) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            val isOnce = isViewOnceUpload
             scope.launch {
+                isProcessingPhoto = true
                 try {
                     val compressedBytes = withContext(Dispatchers.IO) {
                         ImageCompressor.processAndCompressImage(context.applicationContext, uri)
                     }
-                    val result = drawingViewModel.uploadPhoto(compressedBytes, isViewOnce = isOnce)
-                    result.onSuccess {
-                        Toast.makeText(
-                            context,
-                            if (isOnce) "View-once photo sent!" else "Photo sent!",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    val bitmap = withContext(Dispatchers.Default) {
+                        BitmapFactory.decodeByteArray(compressedBytes, 0, compressedBytes.size)?.asImageBitmap()
                     }
-                    result.onFailure { error ->
-                        val msg = error.toUserFriendlyMessage()
-                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    if (bitmap != null) {
+                        pendingPhotoBytes = compressedBytes
+                        pendingPhotoBitmap = bitmap
+                        isPreviewPhotoViewOnce = false
+                        showPhotoPreviewDialog = true
+                    } else {
+                        Toast.makeText(context, "Failed to decode selected photo", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     val msg = e.localizedMessage ?: "Failed to process photo"
                     Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                } finally {
+                    isProcessingPhoto = false
                 }
             }
         }
@@ -604,6 +612,246 @@ fun DrawingMainScreen(
         }
     }
 
+    if (showPhotoPreviewDialog && pendingPhotoBitmap != null) {
+        Dialog(
+            onDismissRequest = {
+                if (!isSendingPhoto) {
+                    showPhotoPreviewDialog = false
+                    pendingPhotoBitmap = null
+                    pendingPhotoBytes = null
+                }
+            },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Black.copy(alpha = 0.94f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Photo Preview",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(
+                            onClick = {
+                                if (!isSendingPhoto) {
+                                    showPhotoPreviewDialog = false
+                                    pendingPhotoBitmap = null
+                                    pendingPhotoBytes = null
+                                }
+                            },
+                            enabled = !isSendingPhoto
+                        ) {
+                            Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val previewBitmap = pendingPhotoBitmap!!
+                    val photoAspectRatio = remember(previewBitmap) {
+                        if (previewBitmap.height > 0) {
+                            previewBitmap.width.toFloat() / previewBitmap.height.toFloat()
+                        } else 1f
+                    }
+
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val containerAspect = maxWidth / maxHeight
+                        val imageModifier = if (containerAspect > photoAspectRatio) {
+                            Modifier
+                                .fillMaxHeight()
+                                .width(maxHeight * photoAspectRatio)
+                        } else {
+                            Modifier
+                                .fillMaxWidth()
+                                .height(maxWidth / photoAspectRatio)
+                        }
+
+                        Box(
+                            modifier = imageModifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                        ) {
+                            Image(
+                                bitmap = previewBitmap,
+                                contentDescription = "Photo Preview",
+                                contentScale = ContentScale.FillBounds,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // View Once Toggle Card
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                if (isPreviewPhotoViewOnce)
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                                else
+                                    Color.White.copy(alpha = 0.08f)
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = if (isPreviewPhotoViewOnce)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.White.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(14.dp)
+                            )
+                            .clickable(enabled = !isSendingPhoto) {
+                                isPreviewPhotoViewOnce = !isPreviewPhotoViewOnce
+                            }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isPreviewPhotoViewOnce)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            Color.White.copy(alpha = 0.2f)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "①",
+                                    color = if (isPreviewPhotoViewOnce)
+                                        MaterialTheme.colorScheme.onPrimary
+                                    else
+                                        Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "View Once",
+                                    color = Color.White,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = if (isPreviewPhotoViewOnce)
+                                        "Disappears after partner views it once"
+                                    else
+                                        "Standard photo — partner can view anytime",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = isPreviewPhotoViewOnce,
+                            onCheckedChange = { isPreviewPhotoViewOnce = it },
+                            enabled = !isSendingPhoto
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                showPhotoPreviewDialog = false
+                                pendingPhotoBitmap = null
+                                pendingPhotoBytes = null
+                            },
+                            enabled = !isSendingPhoto,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Button(
+                            onClick = {
+                                val bytes = pendingPhotoBytes
+                                val isOnce = isPreviewPhotoViewOnce
+                                if (bytes != null) {
+                                    scope.launch {
+                                        val result = drawingViewModel.uploadPhoto(bytes, isViewOnce = isOnce)
+                                        result.onSuccess {
+                                            showPhotoPreviewDialog = false
+                                            pendingPhotoBitmap = null
+                                            pendingPhotoBytes = null
+                                            Toast.makeText(
+                                                context,
+                                                if (isOnce) "View-once photo sent!" else "Photo sent!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                        result.onFailure { error ->
+                                            val msg = error.toUserFriendlyMessage()
+                                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                            },
+                            enabled = !isSendingPhoto,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            if (isSendingPhoto) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Sending...", fontWeight = FontWeight.Bold)
+                            } else {
+                                Text(
+                                    text = "Send Photo",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -711,11 +959,10 @@ fun DrawingMainScreen(
                 brushThickness = state.brushThickness,
                 currentBrushType = state.brushType,
                 isSending = isSending,
-                onPickPhoto = { isViewOnce ->
-                    isViewOnceUpload = isViewOnce
+                onPickPhoto = {
                     photoPickerLauncher.launch("image/*")
                 },
-                isSendingPhoto = isSendingPhoto,
+                isSendingPhoto = isSendingPhoto || isProcessingPhoto,
                 modifier = Modifier.fillMaxWidth()
             )
         }

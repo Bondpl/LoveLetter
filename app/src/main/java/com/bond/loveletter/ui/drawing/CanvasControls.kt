@@ -73,7 +73,7 @@ fun ColumnScope.CanvasControls(
     onSetBrushLevel: (Int) -> Unit = {},
     currentBrushType: BrushType = BrushType.MARKER,
     isSending: Boolean = false,
-    onPickPhoto: (isViewOnce: Boolean) -> Unit = {},
+    onPickPhoto: () -> Unit = {},
     isSendingPhoto: Boolean = false
 ) {
     val scrollState = rememberScrollState()
@@ -334,62 +334,24 @@ fun ColumnScope.CanvasControls(
                     Text("Clear", fontSize = 12.sp)
                 }
 
-                // Send Photo Button with Dropdown Menu (Standard vs View-Once ①)
-                var showPhotoMenu by remember { mutableStateOf(false) }
-
-                Box {
-                    OutlinedIconButton(
-                        onClick = { showPhotoMenu = true },
-                        enabled = !isSending && !isSendingPhoto,
-                        modifier = Modifier.size(38.dp),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        if (isSendingPhoto) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(id = R.drawable.outline_image_24),
-                                contentDescription = "Send Photo",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = showPhotoMenu,
-                        onDismissRequest = { showPhotoMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Standard Photo", fontSize = 14.sp) },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.outline_image_24),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            onClick = {
-                                showPhotoMenu = false
-                                onPickPhoto(false)
-                            }
+                // Send Photo Button (Opens picker; preview & view-once selection in preview dialog)
+                OutlinedIconButton(
+                    onClick = onPickPhoto,
+                    enabled = !isSending && !isSendingPhoto,
+                    modifier = Modifier.size(38.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    if (isSendingPhoto) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        DropdownMenuItem(
-                            text = { Text("View Once", fontSize = 14.sp) },
-                            leadingIcon = {
-                                Text(
-                                    text = "①",
-                                    fontSize = 17.sp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            onClick = {
-                                showPhotoMenu = false
-                                onPickPhoto(true)
-                            }
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.outline_image_24),
+                            contentDescription = "Pick Photo",
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
