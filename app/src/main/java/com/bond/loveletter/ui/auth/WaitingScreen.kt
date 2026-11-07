@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.ui.auth
+package com.bond.loveletter.ui.auth
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -13,11 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bond.loveletter.R
 
 @Composable
 fun WaitingScreen(
@@ -35,7 +37,7 @@ fun WaitingScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Waiting for Partner",
+            text = stringResource(R.string.waiting_title),
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -45,7 +47,7 @@ fun WaitingScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Share this 6-digit code with your partner so they can connect with you:",
+            text = stringResource(R.string.waiting_subtitle),
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -82,7 +84,7 @@ fun WaitingScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Code expires in 10 minutes",
+            text = stringResource(R.string.waiting_code_expires),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
         )
@@ -96,16 +98,16 @@ fun WaitingScreen(
             OutlinedButton(
                 onClick = {
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("LoveLetter Pair Code", pairCode)
+                    val clip = ClipData.newPlainText(context.getString(R.string.app_name), pairCode)
                     clipboard.setPrimaryClip(clip)
-                    Toast.makeText(context, "Pair code copied to clipboard", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_pair_code_copied), Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier
                     .fillMaxWidth(0.7f)
                     .height(44.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Copy Code", fontSize = 14.sp)
+                Text(stringResource(R.string.waiting_btn_copy_code), fontSize = 14.sp)
             }
         }
 
@@ -120,7 +122,7 @@ fun WaitingScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Waiting for partner to enter code...",
+            text = stringResource(R.string.waiting_status_waiting),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -131,7 +133,7 @@ fun WaitingScreen(
             onClick = onCancelPair,
             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
         ) {
-            Text("Cancel Pairing", fontSize = 14.sp)
+            Text(stringResource(R.string.waiting_btn_cancel_pairing), fontSize = 14.sp)
         }
     }
 }

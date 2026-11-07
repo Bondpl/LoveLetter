@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter
+package com.bond.loveletter
 
 import android.app.Application
 import com.bond.loveletter.data.storage.SessionManager
@@ -10,7 +10,13 @@ class LoveLetterApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         NetworkModule.initialize(this)
         sessionManager = SessionManager.getInstance(this)
+    }
+
+    companion object {
+        lateinit var instance: LoveLetterApplication
+            private set
     }
 }

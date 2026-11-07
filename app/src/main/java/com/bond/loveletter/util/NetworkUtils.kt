@@ -1,5 +1,7 @@
 package com.bond.loveletter.util
 
+import com.bond.loveletter.LoveLetterApplication
+import com.bond.loveletter.R
 import com.bond.loveletter.data.model.ApiErrorCode
 import com.bond.loveletter.data.model.ApiErrorResponse
 import com.bond.loveletter.data.network.NetworkClient
@@ -91,30 +93,38 @@ fun <T> Response<T>.toApiException(): AppException.Api {
     )
 }
 
+private fun getStringSafe(resId: Int, default: String): String {
+    return try {
+        LoveLetterApplication.instance.getString(resId)
+    } catch (_: Exception) {
+        default
+    }
+}
+
 fun Throwable.toUserFriendlyMessage(): String {
     return when (val appEx = this.toAppException()) {
-        is AppException.Network -> "No internet connection. Please check your network."
-        is AppException.Timeout -> "Connection timed out. Please try again."
+        is AppException.Network -> getStringSafe(R.string.error_no_internet, "No internet connection. Please check your network.")
+        is AppException.Timeout -> getStringSafe(R.string.error_timeout, "Connection timed out. Please try again.")
         is AppException.PartnerDisconnected -> appEx.reason
         is AppException.Api -> when (appEx.errorCode) {
-            ApiErrorCode.PAIR_NOT_FOUND -> "Invalid or expired pair code."
-            ApiErrorCode.PAIR_FULL -> "This pair is already full."
-            ApiErrorCode.PAIR_RACE_CONDITION -> "This pair was just filled by someone else."
-            ApiErrorCode.NOT_IN_PAIR -> "You are not in an active pair. Your partner has disconnected."
-            ApiErrorCode.RATE_LIMIT_EXCEEDED -> "You are doing this too fast. Please wait a minute."
-            ApiErrorCode.FILE_TOO_LARGE -> "The image is too large to send."
-            ApiErrorCode.TOKEN_REVOKED -> "Session expired. Please connect again."
-            ApiErrorCode.UNAUTHORIZED -> "Authentication failed. Please reconnect."
-            ApiErrorCode.VALIDATION_ERROR -> appEx.serverMessage.ifBlank { "Invalid request data." }
-            ApiErrorCode.INTERNAL_ERROR -> "Server error. Please try again later."
+            ApiErrorCode.PAIR_NOT_FOUND -> getStringSafe(R.string.error_pair_not_found, "Invalid or expired pair code.")
+            ApiErrorCode.PAIR_FULL -> getStringSafe(R.string.error_pair_full, "This pair is already full.")
+            ApiErrorCode.PAIR_RACE_CONDITION -> getStringSafe(R.string.error_pair_race_condition, "This pair was just filled by someone else.")
+            ApiErrorCode.NOT_IN_PAIR -> getStringSafe(R.string.error_not_in_pair, "You are not in an active pair. Your partner has disconnected.")
+            ApiErrorCode.RATE_LIMIT_EXCEEDED -> getStringSafe(R.string.error_rate_limit_exceeded, "You are doing this too fast. Please wait a minute.")
+            ApiErrorCode.FILE_TOO_LARGE -> getStringSafe(R.string.error_file_too_large, "The image is too large to send.")
+            ApiErrorCode.TOKEN_REVOKED -> getStringSafe(R.string.error_token_revoked, "Session expired. Please connect again.")
+            ApiErrorCode.UNAUTHORIZED -> getStringSafe(R.string.error_unauthorized, "Authentication failed. Please reconnect.")
+            ApiErrorCode.VALIDATION_ERROR -> appEx.serverMessage.ifBlank { getStringSafe(R.string.error_validation_default, "Invalid request data.") }
+            ApiErrorCode.INTERNAL_ERROR -> getStringSafe(R.string.error_internal_default, "Server error. Please try again later.")
             else -> {
                 if (appEx.httpStatus in 500..599) {
-                    "Server is currently unavailable. Please try again later."
+                    getStringSafe(R.string.error_server_unavailable, "Server is currently unavailable. Please try again later.")
                 } else {
-                    appEx.serverMessage.ifBlank { "Something went wrong. Please try again." }
+                    appEx.serverMessage.ifBlank { getStringSafe(R.string.error_unexpected, "Something went wrong. Please try again.") }
                 }
             }
         }
-        is AppException.General -> appEx.errorText.ifBlank { "Something went wrong. Please try again." }
+        is AppException.General -> appEx.errorText.ifBlank { getStringSafe(R.string.error_unexpected, "Something went wrong. Please try again.") }
     }
 }

@@ -1,3 +1,114 @@
 <resources>
+    <!-- App & General -->
     <string name="app_name">LoveLetter</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_close">Close</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_subtitle">Draw and exchange encrypted love letters with your partner on your home screen.</string>
+    <string name="auth_start_new_pair_title">Start a New Pair</string>
+    <string name="auth_start_new_pair_subtitle">Generate a pair code to share with your partner.</string>
+    <string name="auth_btn_create_pair">Create Pair Code</string>
+    <string name="auth_divider_or">OR</string>
+    <string name="auth_join_pair_title">Join a Pair</string>
+    <string name="auth_join_pair_subtitle">Enter the 6-digit code from your partner.</string>
+    <string name="auth_pair_code_label">6-Digit Pair Code</string>
+    <string name="auth_btn_connect">Connect</string>
+    <string name="error_pair_code_length">Pair code must be 6 digits</string>
+
+    <!-- Waiting Screen -->
+    <string name="waiting_title">Waiting for Partner</string>
+    <string name="waiting_subtitle">Share this 6-digit code with your partner so they can connect with you:</string>
+    <string name="waiting_code_expires">Code expires in 10 minutes</string>
+    <string name="waiting_btn_copy_code">Copy Code</string>
+    <string name="waiting_status_waiting">Waiting for partner to enter code&#8230;</string>
+    <string name="waiting_btn_cancel_pairing">Cancel Pairing</string>
+    <string name="toast_pair_code_copied">Pair code copied to clipboard</string>
+
+    <!-- Canvas Controls & Color Picker -->
+    <string name="canvas_custom_color_picker">Custom Color Picker</string>
+    <string name="canvas_brush_size">Size %1$d</string>
+    <string name="canvas_brush_marker">Marker</string>
+    <string name="canvas_brush_dashed">Dashed</string>
+    <string name="canvas_brush_highlighter">Highlighter</string>
+    <string name="canvas_fill_canvas">Fill Canvas</string>
+    <string name="canvas_undo">Undo</string>
+    <string name="canvas_redo">Redo</string>
+    <string name="canvas_clear">Clear</string>
+    <string name="canvas_pick_photo">Pick Photo</string>
+    <string name="canvas_send_drawing">Send Drawing</string>
+    <string name="canvas_sending">Sending&#8230;</string>
+    <string name="canvas_brush_style_dialog_title">Brush Style</string>
+    <string name="color_picker_title">Custom Color</string>
+    <string name="color_picker_btn_select">Select Color</string>
+    <string name="color_picker_rgb_format">RGB(%1$d, %2$d, %3$d)</string>
+
+    <!-- Main Screen & Dialogs -->
+    <string name="topbar_partners_art">Partner\'s Drawing</string>
+    <string name="topbar_partners_photo">Partner\'s Photo</string>
+    <string name="topbar_partners_photo_view_once">Partner\'s Photo \u2460</string>
+    <string name="topbar_btn_disconnect">Disconnect</string>
+    <string name="dialog_disconnect_title">Disconnect Pair</string>
+    <string name="dialog_disconnect_message">Are you sure you want to disconnect from your partner? You will need a new pair code to connect again.</string>
+    <string name="toast_partner_disconnected">Your partner has disconnected the pair</string>
+    <string name="toast_drawing_sent">Drawing sent!</string>
+    <string name="toast_photo_sent">Photo sent!</string>
+    <string name="toast_view_once_photo_sent">View-once photo sent!</string>
+    <string name="toast_failed_decode_photo">Failed to decode selected photo</string>
+    <string name="toast_failed_process_photo">Failed to process photo</string>
+    <string name="toast_drawing_saved_gallery">Drawing saved to gallery!</string>
+    <string name="toast_drawing_save_failed">Failed to save drawing</string>
+    <string name="toast_photo_saved_gallery">Photo saved to gallery!</string>
+    <string name="toast_photo_save_failed">Failed to save photo</string>
+    <string name="dialog_partner_art_title">Partner\'s Drawing</string>
+    <string name="dialog_partner_photo_title">Partner\'s Photo</string>
+    <string name="dialog_partner_photo_view_once_subtitle">View once \u2014 will be deleted when closed</string>
+    <string name="dialog_loading_drawing">Loading partner\'s drawing&#8230;</string>
+    <string name="dialog_loading_photo">Loading partner\'s photo&#8230;</string>
+    <string name="dialog_btn_back_to_canvas">Back to Drawing Canvas</string>
+    <string name="dialog_photo_preview_title">Photo Preview</string>
+    <string name="dialog_photo_preview_view_once_title">View Once</string>
+    <string name="dialog_photo_preview_view_once_desc_on">Disappears after partner views it once</string>
+    <string name="dialog_photo_preview_view_once_desc_off">Standard photo \u2014 partner can view anytime</string>
+    <string name="dialog_photo_preview_btn_send">Send Photo</string>
+    <string name="cd_download_to_phone">Download to phone</string>
+    <string name="cd_download_photo_to_phone">Download photo to phone</string>
+    <string name="cd_full_screen_partner_drawing">Full Screen Partner Drawing</string>
+    <string name="cd_full_screen_partner_photo">Full Screen Partner Photo</string>
+    <string name="cd_photo_preview">Photo Preview</string>
+
+    <!-- Widget -->
+    <string name="widget_waiting_on_letter">Waiting on a letter&#8230;</string>
+    <string name="cd_widget_drawing">Love Letter Drawing</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">LoveLetter Alerts</string>
+    <string name="notif_channel_desc">Love Letter pair &amp; drawing notifications</string>
+    <string name="notif_new_drawing_title">New Drawing</string>
+    <string name="notif_new_drawing_body">Your partner sent you a drawing!</string>
+    <string name="notif_new_photo_title">New Photo</string>
+    <string name="notif_new_photo_body">Your partner sent you a photo!</string>
+    <string name="notif_view_once_photo_title">View-Once Photo</string>
+    <string name="notif_view_once_photo_body">Your partner sent you a view-once photo!</string>
+    <string name="notif_partner_left_title">LoveLetter</string>
+    <string name="notif_partner_left_body">Your partner has left the pair</string>
+    <string name="notif_new_update_title">New Update</string>
+    <string name="notif_new_update_body">Your partner sent an update!</string>
+    <string name="notif_fallback_update_body">You have a new update!</string>
+
+    <!-- Network & Errors -->
+    <string name="error_no_internet">No internet connection. Please check your network.</string>
+    <string name="error_timeout">Connection timed out. Please try again.</string>
+    <string name="error_pair_not_found">Invalid or expired pair code.</string>
+    <string name="error_pair_full">This pair is already full.</string>
+    <string name="error_pair_race_condition">This pair was just filled by someone else.</string>
+    <string name="error_not_in_pair">You are not in an active pair. Your partner has disconnected.</string>
+    <string name="error_rate_limit_exceeded">You are doing this too fast. Please wait a minute.</string>
+    <string name="error_file_too_large">The image is too large to send.</string>
+    <string name="error_token_revoked">Session expired. Please connect again.</string>
+    <string name="error_unauthorized">Authentication failed. Please reconnect.</string>
+    <string name="error_validation_default">Invalid request data.</string>
+    <string name="error_internal_default">Server error. Please try again later.</string>
+    <string name="error_server_unavailable">Server is currently unavailable. Please try again later.</string>
+    <string name="error_unexpected">Something went wrong. Please try again.</string>
 </resources>

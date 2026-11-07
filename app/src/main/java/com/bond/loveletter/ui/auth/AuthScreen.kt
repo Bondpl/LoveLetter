@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.ui.auth
+package com.bond.loveletter.ui.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bond.loveletter.R
 
 @Composable
 fun AuthScreen(
@@ -43,7 +45,7 @@ fun AuthScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "LoveLetter",
+            text = stringResource(R.string.app_name),
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
@@ -53,7 +55,7 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Draw and exchange encrypted love letters with your partner on your home screen.",
+            text = stringResource(R.string.auth_subtitle),
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -74,7 +76,7 @@ fun AuthScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Start a New Pair",
+                    text = stringResource(R.string.auth_start_new_pair_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -83,7 +85,7 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Generate a pair code to share with your partner.",
+                    text = stringResource(R.string.auth_start_new_pair_subtitle),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -106,7 +108,7 @@ fun AuthScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Create Pair Code", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.auth_btn_create_pair), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -122,7 +124,7 @@ fun AuthScreen(
         ) {
             HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             Text(
-                text = "OR",
+                text = stringResource(R.string.auth_divider_or),
                 modifier = Modifier.padding(horizontal = 16.dp),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -145,7 +147,7 @@ fun AuthScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Join Partner's Pair",
+                    text = stringResource(R.string.auth_join_pair_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -154,7 +156,7 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Enter the 6-digit code received from your partner.",
+                    text = stringResource(R.string.auth_join_pair_subtitle),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -172,7 +174,7 @@ fun AuthScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("6-Digit Pair Code") },
+                    label = { Text(stringResource(R.string.auth_pair_code_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -216,7 +218,7 @@ fun AuthScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Connect", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.auth_btn_connect), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

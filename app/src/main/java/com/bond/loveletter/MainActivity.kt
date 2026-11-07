@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -277,10 +278,10 @@ fun DrawingMainScreen(
                         isPreviewPhotoViewOnce = false
                         showPhotoPreviewDialog = true
                     } else {
-                        Toast.makeText(context, "Failed to decode selected photo", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_failed_decode_photo), Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
-                    val msg = e.localizedMessage ?: "Failed to process photo"
+                    val msg = e.localizedMessage ?: context.getString(R.string.toast_failed_process_photo)
                     Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
                 } finally {
                     isProcessingPhoto = false
@@ -304,8 +305,8 @@ fun DrawingMainScreen(
     if (showDisconnectDialog) {
         AlertDialog(
             onDismissRequest = { showDisconnectDialog = false },
-            title = { Text("Disconnect Pair") },
-            text = { Text("Are you sure you want to disconnect from your partner? You will need a new pair code to connect again.") },
+            title = { Text(stringResource(R.string.dialog_disconnect_title)) },
+            text = { Text(stringResource(R.string.dialog_disconnect_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -314,12 +315,12 @@ fun DrawingMainScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Disconnect")
+                    Text(stringResource(R.string.topbar_btn_disconnect))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDisconnectDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
@@ -347,7 +348,7 @@ fun DrawingMainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Partner's Art",
+                            text = stringResource(R.string.dialog_partner_art_title),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -364,7 +365,7 @@ fun DrawingMainScreen(
                                             withContext(Dispatchers.Main) {
                                                 Toast.makeText(
                                                     context,
-                                                    if (success) "Drawing saved to gallery!" else "Failed to save drawing",
+                                                    if (success) context.getString(R.string.toast_drawing_saved_gallery) else context.getString(R.string.toast_drawing_save_failed),
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             }
@@ -376,14 +377,14 @@ fun DrawingMainScreen(
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.outline_download_24),
-                                        contentDescription = "Download to phone",
+                                        contentDescription = stringResource(R.string.cd_download_to_phone),
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
                             TextButton(onClick = { drawingViewModel.closePartnerArt() }) {
-                                Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.btn_close), color = Color.White, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -424,7 +425,7 @@ fun DrawingMainScreen(
                             ) {
                                 Image(
                                     bitmap = currentDrawing,
-                                    contentDescription = "Full Screen Partner Drawing",
+                                    contentDescription = stringResource(R.string.cd_full_screen_partner_drawing),
                                     contentScale = ContentScale.FillBounds,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -443,7 +444,7 @@ fun DrawingMainScreen(
                             ) {
                                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "Loading partner's drawing...",
+                                    text = stringResource(R.string.dialog_loading_drawing),
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 14.sp
                                 )
@@ -458,7 +459,7 @@ fun DrawingMainScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Back to Drawing Canvas")
+                        Text(stringResource(R.string.dialog_btn_back_to_canvas))
                     }
                 }
             }
@@ -491,14 +492,14 @@ fun DrawingMainScreen(
                     ) {
                         Column {
                             Text(
-                                text = "Partner's Photo",
+                                text = stringResource(R.string.dialog_partner_photo_title),
                                 color = Color.White,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             if (isPartnerPhotoViewOnce) {
                                 Text(
-                                    text = "View once — will be deleted when closed",
+                                    text = stringResource(R.string.dialog_partner_photo_view_once_subtitle),
                                     color = Color.White.copy(alpha = 0.65f),
                                     fontSize = 11.sp
                                 )
@@ -516,7 +517,7 @@ fun DrawingMainScreen(
                                             withContext(Dispatchers.Main) {
                                                 Toast.makeText(
                                                     context,
-                                                    if (success) "Photo saved to gallery!" else "Failed to save photo",
+                                                    if (success) context.getString(R.string.toast_photo_saved_gallery) else context.getString(R.string.toast_photo_save_failed),
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             }
@@ -528,14 +529,14 @@ fun DrawingMainScreen(
                                 ) {
                                     Icon(
                                         painter = painterResource(id = R.drawable.outline_download_24),
-                                        contentDescription = "Download photo to phone",
+                                        contentDescription = stringResource(R.string.cd_download_photo_to_phone),
                                         tint = Color.White,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
                             TextButton(onClick = { drawingViewModel.closePartnerPhoto(context) }) {
-                                Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.btn_close), color = Color.White, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -574,7 +575,7 @@ fun DrawingMainScreen(
                             ) {
                                 Image(
                                     bitmap = currentPhoto,
-                                    contentDescription = "Full Screen Partner Photo",
+                                    contentDescription = stringResource(R.string.cd_full_screen_partner_photo),
                                     contentScale = ContentScale.FillBounds,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -593,7 +594,7 @@ fun DrawingMainScreen(
                             ) {
                                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    text = "Loading partner's photo...",
+                                    text = stringResource(R.string.dialog_loading_photo),
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 14.sp
                                 )
@@ -608,7 +609,7 @@ fun DrawingMainScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Back to Drawing Canvas")
+                        Text(stringResource(R.string.dialog_btn_back_to_canvas))
                     }
                 }
             }
@@ -643,7 +644,7 @@ fun DrawingMainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Photo Preview",
+                            text = stringResource(R.string.dialog_photo_preview_title),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -658,7 +659,7 @@ fun DrawingMainScreen(
                             },
                             enabled = !isSendingPhoto
                         ) {
-                            Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.btn_cancel), color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -695,7 +696,7 @@ fun DrawingMainScreen(
                         ) {
                             Image(
                                 bitmap = previewBitmap,
-                                contentDescription = "Photo Preview",
+                                contentDescription = stringResource(R.string.cd_photo_preview),
                                 contentScale = ContentScale.FillBounds,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -742,7 +743,7 @@ fun DrawingMainScreen(
                                     .background(
                                         if (isPreviewPhotoViewOnce)
                                             MaterialTheme.colorScheme.primary
-                                        else
+                                         else
                                             Color.White.copy(alpha = 0.2f)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -759,16 +760,16 @@ fun DrawingMainScreen(
                             }
                             Column {
                                 Text(
-                                    text = "View Once",
+                                    text = stringResource(R.string.dialog_photo_preview_view_once_title),
                                     color = Color.White,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = if (isPreviewPhotoViewOnce)
-                                        "Disappears after partner views it once"
+                                        stringResource(R.string.dialog_photo_preview_view_once_desc_on)
                                     else
-                                        "Standard photo — partner can view anytime",
+                                        stringResource(R.string.dialog_photo_preview_view_once_desc_off),
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontSize = 12.sp
                                 )
@@ -800,7 +801,7 @@ fun DrawingMainScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.btn_cancel))
                         }
 
                         Button(
@@ -816,7 +817,7 @@ fun DrawingMainScreen(
                                             pendingPhotoBytes = null
                                             Toast.makeText(
                                                 context,
-                                                if (isOnce) "View-once photo sent!" else "Photo sent!",
+                                                if (isOnce) context.getString(R.string.toast_view_once_photo_sent) else context.getString(R.string.toast_photo_sent),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -841,10 +842,10 @@ fun DrawingMainScreen(
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Sending...", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.canvas_sending), fontWeight = FontWeight.Bold)
                             } else {
                                 Text(
-                                    text = "Send Photo",
+                                    text = stringResource(R.string.dialog_photo_preview_btn_send),
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -868,7 +869,7 @@ fun DrawingMainScreen(
                             modifier = Modifier.padding(end = 4.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Partner's Art", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.topbar_partners_art), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -880,7 +881,7 @@ fun DrawingMainScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Text(
-                                text = if (isPartnerPhotoViewOnce) "Partner's Photo ①" else "Partner's Photo",
+                                text = if (isPartnerPhotoViewOnce) stringResource(R.string.topbar_partners_photo_view_once) else stringResource(R.string.topbar_partners_photo),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isPartnerPhotoViewOnce) MaterialTheme.colorScheme.primary else Color.Unspecified
@@ -901,7 +902,7 @@ fun DrawingMainScreen(
                         onClick = { showDisconnectDialog = true },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Disconnect")
+                        Text(stringResource(R.string.topbar_btn_disconnect))
                     }
                 }
             )
@@ -941,7 +942,7 @@ fun DrawingMainScreen(
                         }
                         val result = drawingViewModel.uploadDrawing(pngByteArray)
                         result.onSuccess {
-                            Toast.makeText(context, "Drawing sent!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_drawing_sent), Toast.LENGTH_SHORT).show()
                         }
                         result.onFailure { error ->
                             val msg = error.toUserFriendlyMessage()

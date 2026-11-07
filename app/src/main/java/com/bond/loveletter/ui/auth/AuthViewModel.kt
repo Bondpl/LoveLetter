@@ -2,6 +2,8 @@ package com.bond.loveletter.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bond.loveletter.LoveLetterApplication
+import com.bond.loveletter.R
 import com.bond.loveletter.data.repository.AuthRepository
 import com.bond.loveletter.data.storage.AuthState
 import com.bond.loveletter.data.storage.SessionManager
@@ -67,7 +69,12 @@ class AuthViewModel : ViewModel() {
     fun joinPair(pairCode: String) {
         val trimmed = pairCode.trim()
         if (trimmed.length != 6) {
-            _errorMessage.value = "Pair code must be 6 digits"
+            val msg = try {
+                LoveLetterApplication.instance.getString(R.string.error_pair_code_length)
+            } catch (_: Exception) {
+                "Pair code must be 6 digits"
+            }
+            _errorMessage.value = msg
             return
         }
 

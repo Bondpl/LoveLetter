@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -144,7 +145,7 @@ fun ColumnScope.CanvasControls(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.outline_palette_24),
-                            contentDescription = "Custom Color Picker",
+                            contentDescription = stringResource(R.string.canvas_custom_color_picker),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
@@ -239,7 +240,7 @@ fun ColumnScope.CanvasControls(
                             ) {
                                 Icon(
                                     painter = painterResource(id = iconRes),
-                                    contentDescription = "Size $level",
+                                    contentDescription = stringResource(R.string.canvas_brush_size, level),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -250,7 +251,7 @@ fun ColumnScope.CanvasControls(
                             ) {
                                 Icon(
                                     painter = painterResource(id = iconRes),
-                                    contentDescription = "Size $level",
+                                    contentDescription = stringResource(R.string.canvas_brush_size, level),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -260,10 +261,10 @@ fun ColumnScope.CanvasControls(
 
                 // Brush Type / Style Button with active name
                 val currentStyleName = when (currentBrushType) {
-                    BrushType.MARKER -> "Marker"
-                    BrushType.DASHED -> "Dashed"
-                    BrushType.HIGHLIGHTER -> "Highlighter"
-                    BrushType.CONTINUOUS -> "Marker"
+                    BrushType.MARKER -> stringResource(R.string.canvas_brush_marker)
+                    BrushType.DASHED -> stringResource(R.string.canvas_brush_dashed)
+                    BrushType.HIGHLIGHTER -> stringResource(R.string.canvas_brush_highlighter)
+                    BrushType.CONTINUOUS -> stringResource(R.string.canvas_brush_marker)
                 }
 
                 FilledTonalButton(
@@ -282,7 +283,7 @@ fun ColumnScope.CanvasControls(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_format_paint_24),
-                        contentDescription = "Fill Canvas",
+                        contentDescription = stringResource(R.string.canvas_fill_canvas),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -305,7 +306,7 @@ fun ColumnScope.CanvasControls(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_undo_24),
-                        contentDescription = "Undo",
+                        contentDescription = stringResource(R.string.canvas_undo),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -319,7 +320,7 @@ fun ColumnScope.CanvasControls(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.outline_redo_24),
-                        contentDescription = "Redo",
+                        contentDescription = stringResource(R.string.canvas_redo),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -331,7 +332,7 @@ fun ColumnScope.CanvasControls(
                     contentPadding = PaddingValues(horizontal = 8.dp),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Clear", fontSize = 12.sp)
+                    Text(stringResource(R.string.canvas_clear), fontSize = 12.sp)
                 }
 
                 // Send Photo Button (Opens picker; preview & view-once selection in preview dialog)
@@ -350,7 +351,7 @@ fun ColumnScope.CanvasControls(
                     } else {
                         Icon(
                             painter = painterResource(id = R.drawable.outline_image_24),
-                            contentDescription = "Pick Photo",
+                            contentDescription = stringResource(R.string.canvas_pick_photo),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -375,7 +376,7 @@ fun ColumnScope.CanvasControls(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Sending...",
+                            text = stringResource(R.string.canvas_sending),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -383,7 +384,7 @@ fun ColumnScope.CanvasControls(
                         )
                     } else {
                         Text(
-                            text = "Send Drawing",
+                            text = stringResource(R.string.canvas_send_drawing),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -398,7 +399,7 @@ fun ColumnScope.CanvasControls(
     if (showOptions) {
         AlertDialog(
             onDismissRequest = { showOptions = false },
-            title = { Text("Brush Style") },
+            title = { Text(stringResource(R.string.canvas_brush_style_dialog_title)) },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -406,9 +407,9 @@ fun ColumnScope.CanvasControls(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     val brushOptions = listOf(
-                        BrushType.MARKER to "Marker",
-                        BrushType.DASHED to "Dashed",
-                        BrushType.HIGHLIGHTER to "Highlighter"
+                        BrushType.MARKER to stringResource(R.string.canvas_brush_marker),
+                        BrushType.DASHED to stringResource(R.string.canvas_brush_dashed),
+                        BrushType.HIGHLIGHTER to stringResource(R.string.canvas_brush_highlighter)
                     )
                     for ((type, label) in brushOptions) {
                         val isCurrent = currentBrushType == type
@@ -435,7 +436,7 @@ fun ColumnScope.CanvasControls(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showOptions = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.btn_close))
                 }
             }
         )

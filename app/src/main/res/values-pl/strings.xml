@@ -1,0 +1,114 @@
+<resources>
+    <!-- App & General -->
+    <string name="app_name">LoveLetter</string>
+    <string name="btn_cancel">Anuluj</string>
+    <string name="btn_close">Zamknij</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_subtitle">Rysuj i wymieniaj zaszyfrowane wiadomości ze swoją drugą połówką na ekranie głównym.</string>
+    <string name="auth_start_new_pair_title">Utwórz nową parę</string>
+    <string name="auth_start_new_pair_subtitle">Wygeneruj kod pary, aby połączyć się z partnerem.</string>
+    <string name="auth_btn_create_pair">Utwórz kod pary</string>
+    <string name="auth_divider_or">LUB</string>
+    <string name="auth_join_pair_title">Dołącz do pary</string>
+    <string name="auth_join_pair_subtitle">Wpisz 6-cyfrowy kod otrzymany od partnera.</string>
+    <string name="auth_pair_code_label">6-cyfrowy kod pary</string>
+    <string name="auth_btn_connect">Połącz</string>
+    <string name="error_pair_code_length">Kod pary musi mieć 6 cyfr</string>
+
+    <!-- Waiting Screen -->
+    <string name="waiting_title">Oczekiwanie na partnera</string>
+    <string name="waiting_subtitle">Udostępnij ten 6-cyfrowy kod swojemu partnerowi, aby mógł się połączyć:</string>
+    <string name="waiting_code_expires">Kod wygasa za 10 minut</string>
+    <string name="waiting_btn_copy_code">Kopiuj kod</string>
+    <string name="waiting_status_waiting">Oczekiwanie na wpisanie kodu przez partnera&#8230;</string>
+    <string name="waiting_btn_cancel_pairing">Anuluj łączenie</string>
+    <string name="toast_pair_code_copied">Skopiowano kod pary do schowka</string>
+
+    <!-- Canvas Controls & Color Picker -->
+    <string name="canvas_custom_color_picker">Wybór własnego koloru</string>
+    <string name="canvas_brush_size">Rozmiar %1$d</string>
+    <string name="canvas_brush_marker">Marker</string>
+    <string name="canvas_brush_dashed">Linia przerywana</string>
+    <string name="canvas_brush_highlighter">Zakreślacz</string>
+    <string name="canvas_fill_canvas">Wypełnij tło</string>
+    <string name="canvas_undo">Cofnij</string>
+    <string name="canvas_redo">Ponów</string>
+    <string name="canvas_clear">Wyczyść</string>
+    <string name="canvas_pick_photo">Wybierz zdjęcie</string>
+    <string name="canvas_send_drawing">Wyślij rysunek</string>
+    <string name="canvas_sending">Wysyłanie&#8230;</string>
+    <string name="canvas_brush_style_dialog_title">Styl pędzla</string>
+    <string name="color_picker_title">Własny kolor</string>
+    <string name="color_picker_btn_select">Wybierz kolor</string>
+    <string name="color_picker_rgb_format">RGB(%1$d, %2$d, %3$d)</string>
+
+    <!-- Main Screen & Dialogs -->
+    <string name="topbar_partners_art">Rysunek partnera</string>
+    <string name="topbar_partners_photo">Zdjęcie partnera</string>
+    <string name="topbar_partners_photo_view_once">Zdjęcie partnera \u2460</string>
+    <string name="topbar_btn_disconnect">Rozłącz</string>
+    <string name="dialog_disconnect_title">Rozłącz parę</string>
+    <string name="dialog_disconnect_message">Czy na pewno chcesz się rozłączyć? Aby połączyć się ponownie, będzie potrzebny nowy kod.</string>
+    <string name="toast_partner_disconnected">Twój partner rozłączył parę</string>
+    <string name="toast_drawing_sent">Rysunek wysłany!</string>
+    <string name="toast_photo_sent">Zdjęcie wysłane!</string>
+    <string name="toast_view_once_photo_sent">Wysłano zdjęcie jednorazowe!</string>
+    <string name="toast_failed_decode_photo">Nie udało się otworzyć wybranego zdjęcia</string>
+    <string name="toast_failed_process_photo">Nie udało się przetworzyć zdjęcia</string>
+    <string name="toast_drawing_saved_gallery">Zapisano rysunek w galerii!</string>
+    <string name="toast_drawing_save_failed">Nie udało się zapisać rysunku</string>
+    <string name="toast_photo_saved_gallery">Zapisano zdjęcie w galerii!</string>
+    <string name="toast_photo_save_failed">Nie udało się zapisać zdjęcia</string>
+    <string name="dialog_partner_art_title">Rysunek partnera</string>
+    <string name="dialog_partner_photo_title">Zdjęcie partnera</string>
+    <string name="dialog_partner_photo_view_once_subtitle">Zdjęcie jednorazowe — zniknie po zamknięciu</string>
+    <string name="dialog_loading_drawing">Ładowanie rysunku partnera&#8230;</string>
+    <string name="dialog_loading_photo">Ładowanie zdjęcia partnera&#8230;</string>
+    <string name="dialog_btn_back_to_canvas">Wróć do rysowania</string>
+    <string name="dialog_photo_preview_title">Podgląd zdjęcia</string>
+    <string name="dialog_photo_preview_view_once_title">Wyświetl tylko raz</string>
+    <string name="dialog_photo_preview_view_once_desc_on">Zniknie, gdy partner wyświetli je jeden raz</string>
+    <string name="dialog_photo_preview_view_once_desc_off">Standardowe zdjęcie — partner może oglądać je wielokrotnie</string>
+    <string name="dialog_photo_preview_btn_send">Wyślij zdjęcie</string>
+    <string name="cd_download_to_phone">Zapisz na telefonie</string>
+    <string name="cd_download_photo_to_phone">Zapisz zdjęcie na telefonie</string>
+    <string name="cd_full_screen_partner_drawing">Pełny ekran rysunku partnera</string>
+    <string name="cd_full_screen_partner_photo">Pełny ekran zdjęcia partnera</string>
+    <string name="cd_photo_preview">Podgląd zdjęcia</string>
+
+    <!-- Widget -->
+    <string name="widget_waiting_on_letter">Czekam na wiadomość&#8230;</string>
+    <string name="cd_widget_drawing">Rysunek LoveLetter</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">Powiadomienia LoveLetter</string>
+    <string name="notif_channel_desc">Powiadomienia o nowych rysunkach i statusie pary</string>
+    <string name="notif_new_drawing_title">Nowy rysunek</string>
+    <string name="notif_new_drawing_body">Twój partner przesłał Ci nowy rysunek!</string>
+    <string name="notif_new_photo_title">Nowe zdjęcie</string>
+    <string name="notif_new_photo_body">Twój partner przesłał Ci zdjęcie!</string>
+    <string name="notif_view_once_photo_title">Zdjęcie jednorazowe</string>
+    <string name="notif_view_once_photo_body">Twój partner przysłał zdjęcie do jednorazowego wyświetlenia!</string>
+    <string name="notif_partner_left_title">LoveLetter</string>
+    <string name="notif_partner_left_body">Twój partner opuścił parę</string>
+    <string name="notif_new_update_title">Nowa wiadomość</string>
+    <string name="notif_new_update_body">Twój partner przesłał aktualizację!</string>
+    <string name="notif_fallback_update_body">Masz nową wiadomość w LoveLetter!</string>
+
+    <!-- Network & Errors -->
+    <string name="error_no_internet">Brak połączenia z internetem. Sprawdź swoją sieć.</string>
+    <string name="error_timeout">Przekroczono czas oczekiwania. Spróbuj ponownie.</string>
+    <string name="error_pair_not_found">Nieprawidłowy lub wygasły kod pary.</string>
+    <string name="error_pair_full">Do tej pary dołączył już partner.</string>
+    <string name="error_pair_race_condition">Ta para została przed chwilą zajęta.</string>
+    <string name="error_not_in_pair">Nie masz aktywnej pary. Twój partner się rozłączył.</string>
+    <string name="error_rate_limit_exceeded">Wysyłasz zbyt często. Odczekaj chwilę.</string>
+    <string name="error_file_too_large">Zdjęcie jest za duże do wysłania.</string>
+    <string name="error_token_revoked">Sesja wygasła. Połącz się ponownie.</string>
+    <string name="error_unauthorized">Błąd autoryzacji. Połącz się ponownie.</string>
+    <string name="error_validation_default">Nieprawidłowe dane.</string>
+    <string name="error_internal_default">Błąd serwera. Spróbuj ponownie później.</string>
+    <string name="error_server_unavailable">Serwer jest chwilowo niedostępny. Spróbuj ponownie za chwilę.</string>
+    <string name="error_unexpected">Wystąpił nieoczekiwany błąd. Spróbuj ponownie.</string>
+</resources>

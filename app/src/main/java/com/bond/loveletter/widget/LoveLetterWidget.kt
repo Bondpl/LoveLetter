@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.widget
+package com.bond.loveletter.widget
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -32,6 +32,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.bond.loveletter.MainActivity
+import com.bond.loveletter.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,13 +60,13 @@ class LoveLetterWidget : GlanceAppWidget() {
                 if (bitmap != null) {
                     Image(
                         provider = ImageProvider(bitmap),
-                        contentDescription = "Love Letter Drawing",
+                        contentDescription = context.getString(R.string.cd_widget_drawing),
                         contentScale = ContentScale.Fit,
                         modifier = GlanceModifier.fillMaxSize()
                     )
                 } else {
                     Text(
-                        text = "Waiting on a letter...",
+                        text = context.getString(R.string.widget_waiting_on_letter),
                         style = TextStyle(color = ColorProvider(day = Color(0xFF1C1B1F), night = Color(0xFFE6E1E5)))
                     )
                 }

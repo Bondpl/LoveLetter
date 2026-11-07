@@ -79,8 +79,8 @@ class PushNotificationService : FirebaseMessagingService() {
                                     DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce, iv)
 
                                     // 3. Send photo notification
-                                    val title = if (isViewOnce) "View-Once Photo" else (dataTitle ?: "New Photo")
-                                    val body = if (isViewOnce) "Your partner sent you a view-once photo!" else (dataBody ?: "Your partner sent you a photo!")
+                                    val title = if (isViewOnce) getString(R.string.notif_view_once_photo_title) else (dataTitle ?: getString(R.string.notif_new_photo_title))
+                                    val body = if (isViewOnce) getString(R.string.notif_view_once_photo_body) else (dataBody ?: getString(R.string.notif_new_photo_body))
                                     val photoData = remoteMessage.data.toMutableMap().apply {
                                         put("EXTRA_OPEN_PARTNER_PHOTO", "true")
                                     }
@@ -95,8 +95,8 @@ class PushNotificationService : FirebaseMessagingService() {
                                     LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
                                     DrawingUpdateBus.notifyNewDrawing(rawBytes)
 
-                                    val title = dataTitle ?: "New Drawing"
-                                    val body = dataBody ?: "Your partner sent you a drawing!"
+                                    val title = dataTitle ?: getString(R.string.notif_new_drawing_title)
+                                    val body = dataBody ?: getString(R.string.notif_new_drawing_body)
                                     val drawingData = remoteMessage.data.toMutableMap().apply {
                                         put("EXTRA_OPEN_PARTNER_DRAWING", "true")
                                     }
@@ -112,14 +112,14 @@ class PushNotificationService : FirebaseMessagingService() {
                             }
                         }.onFailure { error ->
                             Log.e("PushService", "Error downloading/decrypting drawing or photo", error)
-                            val title = dataTitle ?: "New Update"
-                            val body = dataBody ?: "Your partner sent an update!"
+                            val title = dataTitle ?: getString(R.string.notif_new_update_title)
+                            val body = dataBody ?: getString(R.string.notif_new_update_body)
                             sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                         }
                     } catch (e: Exception) {
                         Log.e("PushService", "Failed to fetch/update image", e)
-                        val title = dataTitle ?: "New Update"
-                        val body = dataBody ?: "Your partner sent an update!"
+                        val title = dataTitle ?: getString(R.string.notif_new_update_title)
+                        val body = dataBody ?: getString(R.string.notif_new_update_body)
                         sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                     }
                 }
@@ -136,13 +136,13 @@ class PushNotificationService : FirebaseMessagingService() {
                 }
 
                 if (isMatching && sessionManager.isPaired()) {
-                    val title = dataTitle ?: "LoveLetter"
-                    val body = dataBody ?: "Your partner has left the pair"
+                    val title = dataTitle ?: getString(R.string.notif_partner_left_title)
+                    val body = dataBody ?: getString(R.string.notif_partner_left_body)
                     sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DISCONNECT_ID)
 
                     // Reset local state, session and widget synchronously while service is active
                     runBlocking(Dispatchers.IO) {
-                        sessionManager.clearSession("Your partner has disconnected the pair")
+                        sessionManager.clearSession(getString(R.string.toast_partner_disconnected))
                         LoveLetterWidget.clearWidgetSuspend(applicationContext)
                         DrawingUpdateBus.clear()
                         try {
@@ -204,8 +204,8 @@ class PushNotificationService : FirebaseMessagingService() {
                                     LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
                                     DrawingUpdateBus.notifyNewDrawing(rawBytes)
 
-                                    val title = dataTitle ?: "New Drawing"
-                                    val body = dataBody ?: "Your partner sent you a drawing!"
+                                    val title = dataTitle ?: getString(R.string.notif_new_drawing_title)
+                                    val body = dataBody ?: getString(R.string.notif_new_drawing_body)
                                     val drawingData = remoteMessage.data.toMutableMap().apply {
                                         put("EXTRA_OPEN_PARTNER_DRAWING", "true")
                                     }
@@ -217,19 +217,19 @@ class PushNotificationService : FirebaseMessagingService() {
                                     )
                                 }
                             } else {
-                                val title = dataTitle ?: "LoveLetter"
-                                val body = dataBody ?: "You have a new update!"
+                                val title = dataTitle ?: getString(R.string.notif_partner_left_title)
+                                val body = dataBody ?: getString(R.string.notif_fallback_update_body)
                                 sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                             }
                         }.onFailure {
-                            val title = dataTitle ?: "LoveLetter"
-                            val body = dataBody ?: "You have a new update!"
+                            val title = dataTitle ?: getString(R.string.notif_partner_left_title)
+                            val body = dataBody ?: getString(R.string.notif_fallback_update_body)
                             sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                         }
                     } catch (e: Exception) {
                         Log.e("PushService", "Failed in fallback handler", e)
-                        val title = dataTitle ?: "LoveLetter"
-                        val body = dataBody ?: "You have a new update!"
+                        val title = dataTitle ?: getString(R.string.notif_partner_left_title)
+                        val body = dataBody ?: getString(R.string.notif_fallback_update_body)
                         sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                     }
                 }
@@ -292,10 +292,10 @@ class PushNotificationService : FirebaseMessagingService() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "LoveLetter Alerts",
+            getString(R.string.notif_channel_name),
             NotificationManager.IMPORTANCE_HIGH
         )
-        channel.description = "Love Letter pair & drawing notifications"
+        channel.description = getString(R.string.notif_channel_desc)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
