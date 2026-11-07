@@ -11,10 +11,18 @@ data class PhotoUpdate(
 )
 
 object DrawingUpdateBus {
-    private val _drawingUpdates = MutableSharedFlow<ByteArray>(replay = 1, extraBufferCapacity = 1)
+    private val _drawingUpdates = MutableSharedFlow<ByteArray>(
+        replay = 1,
+        extraBufferCapacity = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val drawingUpdates: SharedFlow<ByteArray> = _drawingUpdates.asSharedFlow()
 
-    private val _photoUpdates = MutableSharedFlow<PhotoUpdate>(replay = 1, extraBufferCapacity = 1)
+    private val _photoUpdates = MutableSharedFlow<PhotoUpdate>(
+        replay = 1,
+        extraBufferCapacity = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val photoUpdates: SharedFlow<PhotoUpdate> = _photoUpdates.asSharedFlow()
 
     fun notifyNewDrawing(imageBytes: ByteArray) {

@@ -102,12 +102,13 @@ class AuthRepository(
     }
 
     suspend fun leavePair(): Result<Unit> {
-        sessionManager.clearSession()
         return try {
             apiService.leavePair()
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.success(Unit)
+            Result.failure(e.toAppException())
+        } finally {
+            sessionManager.clearSession()
         }
     }
 

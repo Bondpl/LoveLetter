@@ -1,4 +1,4 @@
-﻿package com.bond.loveletter.data.storage
+package com.bond.loveletter.data.storage
 
 import android.content.Context
 import com.bond.loveletter.ui.drawing.DrawingState
@@ -21,7 +21,13 @@ object CanvasStorage {
             val file = File(context.filesDir, FILE_NAME)
             val tmp = File(context.filesDir, "$FILE_NAME.tmp")
             tmp.writeText(json.encodeToString(history))
-            tmp.renameTo(file)
+            if (file.exists()) {
+                file.delete()
+            }
+            if (!tmp.renameTo(file)) {
+                tmp.copyTo(file, overwrite = true)
+                tmp.delete()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

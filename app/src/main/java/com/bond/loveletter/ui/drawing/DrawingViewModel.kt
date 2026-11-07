@@ -125,9 +125,6 @@ class DrawingViewModel(
 
     private var currentPhotoIv: String? = null
 
-    private val _isViewOnceSelected = MutableStateFlow(false)
-    val isViewOnceSelected = _isViewOnceSelected.asStateFlow()
-
     private val _showPartnerArt = MutableStateFlow(false)
     val showPartnerArt = _showPartnerArt.asStateFlow()
 
@@ -151,12 +148,11 @@ class DrawingViewModel(
                 _partnerPhoto.value = update.bytes
                 _isPartnerPhotoViewOnce.value = update.isViewOnce
                 currentPhotoIv = update.iv
+                if (_showPartnerPhoto.value && update.isViewOnce && !update.iv.isNullOrBlank()) {
+                    sessionManager.markViewOnceConsumed(update.iv)
+                }
             }
         }
-    }
-
-    fun toggleViewOnce() {
-        _isViewOnceSelected.update { !it }
     }
 
     fun openPartnerArt() {
@@ -372,7 +368,6 @@ class DrawingViewModel(
         _downloadedImage.value = null
         _partnerPhoto.value = null
         _isPartnerPhotoViewOnce.value = false
-        _isViewOnceSelected.value = false
         _showPartnerArt.value = false
         _showPartnerPhoto.value = false
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -431,6 +426,9 @@ class DrawingViewModel(
                             _partnerPhoto.value = photoBytes
                             _isPartnerPhotoViewOnce.value = isOnce
                             currentPhotoIv = iv
+                            if (_showPartnerPhoto.value && isOnce && !iv.isNullOrBlank()) {
+                                sessionManager.markViewOnceConsumed(iv)
+                            }
                         } else {
                             _downloadedImage.value = bytes
                         }
@@ -470,6 +468,9 @@ class DrawingViewModel(
                                 _partnerPhoto.value = bytes
                                 _isPartnerPhotoViewOnce.value = isViewOnce
                                 currentPhotoIv = cachedIv
+                                if (_showPartnerPhoto.value && isViewOnce && !cachedIv.isNullOrBlank()) {
+                                    sessionManager.markViewOnceConsumed(cachedIv)
+                                }
                             }
                         }
                     }
@@ -478,10 +479,6 @@ class DrawingViewModel(
                 e.printStackTrace()
             }
         }
-    }
-
-    fun onDrawingReceived(imageBytes: ByteArray) {
-        _downloadedImage.value = imageBytes
     }
 
     companion object {

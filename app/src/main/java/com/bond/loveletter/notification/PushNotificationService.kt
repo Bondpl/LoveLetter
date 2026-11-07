@@ -129,7 +129,13 @@ class PushNotificationService : FirebaseMessagingService() {
                 val incomingPairId = remoteMessage.data["pairId"]
                 val currentPairId = sessionManager.getPairId()
 
-                if (!incomingPairId.isNullOrBlank() && incomingPairId == currentPairId) {
+                val isMatching = if (!incomingPairId.isNullOrBlank() && !currentPairId.isNullOrBlank()) {
+                    incomingPairId == currentPairId
+                } else {
+                    sessionManager.isPaired()
+                }
+
+                if (isMatching && sessionManager.isPaired()) {
                     val title = dataTitle ?: "LoveLetter"
                     val body = dataBody ?: "Your partner has left the pair"
                     sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DISCONNECT_ID)
@@ -151,37 +157,80 @@ class PushNotificationService : FirebaseMessagingService() {
             }
 
             else -> {
-                val title = dataTitle ?: "LoveLetter"
-                val body = dataBody ?: "You have a new update!"
-                sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
+                if (!sessionManager.isPaired()) {
+                    val title = dataTitle ?: "LoveLetter"
+                    val body = dataBody ?: "You have a new update!"
+                    sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
+                    return
+                }
 
-                if (remoteMessage.data.isNotEmpty() && sessionManager.isPaired()) {
-                    runBlocking(Dispatchers.IO) {
-                        try {
-                            val repository = NetworkModule.getDrawingRepository(applicationContext)
-                            val result = repository.getLatestDrawing()
-                            result.onSuccess { payloadResult ->
-                                if (payloadResult != null) {
-                                    val rawBytes = payloadResult.bytes
-                                    val iv = payloadResult.iv
-                                    if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
-                                        val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
-                                        if (isViewOnce && sessionManager.isViewOnceConsumed(iv)) {
-                                            return@onSuccess
-                                        }
-                                        val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
+                runBlocking(Dispatchers.IO) {
+                    try {
+                        val repository = NetworkModule.getDrawingRepository(applicationContext)
+                        val result = repository.getLatestDrawing()
+                        result.onSuccess { payloadResult ->
+                            if (payloadResult != null) {
+                                val rawBytes = payloadResult.bytes
+                                val iv = payloadResult.iv
+                                if (DrawingPayloadUtils.isPhotoPayload(rawBytes)) {
+                                    val isViewOnce = DrawingPayloadUtils.isViewOncePhoto(rawBytes)
+                                    if (isViewOnce && sessionManager.isViewOnceConsumed(iv)) {
+                                        return@onSuccess
+                                    }
+                                    val photoBytes = DrawingPayloadUtils.extractPhotoBytes(rawBytes)
+                                    try {
                                         File(applicationContext.filesDir, "latest_partner_photo.png").writeBytes(photoBytes)
                                         File(applicationContext.filesDir, "partner_photo.iv").writeText(iv)
                                         val flagFile = File(applicationContext.filesDir, "partner_photo_view_once.flag")
                                         if (isViewOnce) flagFile.createNewFile() else flagFile.delete()
-                                        DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce, iv)
-                                    } else {
-                                        LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
-                                        DrawingUpdateBus.notifyNewDrawing(rawBytes)
+                                    } catch (e: Exception) {
+                                        Log.e("PushService", "Failed to cache photo locally", e)
                                     }
+
+                                    DrawingUpdateBus.notifyNewPhoto(photoBytes, isViewOnce, iv)
+
+                                    val title = if (isViewOnce) "View-Once Photo" else (dataTitle ?: "New Photo")
+                                    val body = if (isViewOnce) "Your partner sent you a view-once photo!" else (dataBody ?: "Your partner sent you a photo!")
+                                    val photoData = remoteMessage.data.toMutableMap().apply {
+                                        put("EXTRA_OPEN_PARTNER_PHOTO", "true")
+                                    }
+                                    sendNotification(
+                                        title = title,
+                                        body = body,
+                                        data = photoData,
+                                        notificationId = NOTIFICATION_PHOTO_ID
+                                    )
+                                } else {
+                                    LoveLetterWidget.updateWidgetImageSuspend(applicationContext, rawBytes)
+                                    DrawingUpdateBus.notifyNewDrawing(rawBytes)
+
+                                    val title = dataTitle ?: "New Drawing"
+                                    val body = dataBody ?: "Your partner sent you a drawing!"
+                                    val drawingData = remoteMessage.data.toMutableMap().apply {
+                                        put("EXTRA_OPEN_PARTNER_DRAWING", "true")
+                                    }
+                                    sendNotification(
+                                        title = title,
+                                        body = body,
+                                        data = drawingData,
+                                        notificationId = NOTIFICATION_DRAWING_ID
+                                    )
                                 }
+                            } else {
+                                val title = dataTitle ?: "LoveLetter"
+                                val body = dataBody ?: "You have a new update!"
+                                sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                             }
-                        } catch (_: Exception) {}
+                        }.onFailure {
+                            val title = dataTitle ?: "LoveLetter"
+                            val body = dataBody ?: "You have a new update!"
+                            sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("PushService", "Failed in fallback handler", e)
+                        val title = dataTitle ?: "LoveLetter"
+                        val body = dataBody ?: "You have a new update!"
+                        sendNotification(title = title, body = body, data = remoteMessage.data, notificationId = NOTIFICATION_DRAWING_ID)
                     }
                 }
             }

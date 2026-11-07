@@ -24,10 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -219,7 +217,6 @@ fun DrawingMainScreen(
     val downloadedImage by drawingViewModel.downloadedImage.collectAsStateWithLifecycle()
     val partnerPhoto by drawingViewModel.partnerPhoto.collectAsStateWithLifecycle()
     val isPartnerPhotoViewOnce by drawingViewModel.isPartnerPhotoViewOnce.collectAsStateWithLifecycle()
-    val isViewOnceSelected by drawingViewModel.isViewOnceSelected.collectAsStateWithLifecycle()
     val showPartnerDrawingDialog by drawingViewModel.showPartnerArt.collectAsStateWithLifecycle()
     val showPartnerPhotoDialog by drawingViewModel.showPartnerPhoto.collectAsStateWithLifecycle()
     val isSendingPhoto by drawingViewModel.isSendingPhoto.collectAsStateWithLifecycle()
@@ -231,22 +228,26 @@ fun DrawingMainScreen(
 
     var showDisconnectDialog by remember { mutableStateOf(false) }
 
-    val partnerBitmap = remember(downloadedImage) {
-        downloadedImage?.let { bytes ->
-            try {
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-            } catch (e: Exception) {
-                null
+    val partnerBitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(initialValue = null, downloadedImage) {
+        value = withContext(Dispatchers.Default) {
+            downloadedImage?.let { bytes ->
+                try {
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
             }
         }
     }
 
-    val partnerPhotoBitmap = remember(partnerPhoto) {
-        partnerPhoto?.let { bytes ->
-            try {
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-            } catch (e: Exception) {
-                null
+    val partnerPhotoBitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(initialValue = null, partnerPhoto) {
+        value = withContext(Dispatchers.Default) {
+            partnerPhoto?.let { bytes ->
+                try {
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
             }
         }
     }
@@ -389,10 +390,11 @@ fun DrawingMainScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (partnerBitmap != null) {
-                        val imageAspectRatio = remember(partnerBitmap) {
-                            if (partnerBitmap.height > 0) {
-                                partnerBitmap.width.toFloat() / partnerBitmap.height.toFloat()
+                    val currentDrawing = partnerBitmap
+                    if (currentDrawing != null) {
+                        val imageAspectRatio = remember(currentDrawing) {
+                            if (currentDrawing.height > 0) {
+                                currentDrawing.width.toFloat() / currentDrawing.height.toFloat()
                             } else 1f
                         }
 
@@ -402,7 +404,7 @@ fun DrawingMainScreen(
                                 .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            val containerAspect = maxWidth / maxHeight
+                            val containerAspect = if (maxHeight > 0.dp) maxWidth / maxHeight else 1f
                             val imageModifier = if (containerAspect > imageAspectRatio) {
                                 Modifier
                                     .fillMaxHeight()
@@ -421,7 +423,7 @@ fun DrawingMainScreen(
                                     .background(Color.White)
                             ) {
                                 Image(
-                                    bitmap = partnerBitmap,
+                                    bitmap = currentDrawing,
                                     contentDescription = "Full Screen Partner Drawing",
                                     contentScale = ContentScale.FillBounds,
                                     modifier = Modifier.fillMaxSize()
@@ -540,10 +542,11 @@ fun DrawingMainScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (partnerPhotoBitmap != null) {
-                        val photoAspectRatio = remember(partnerPhotoBitmap) {
-                            if (partnerPhotoBitmap.height > 0) {
-                                partnerPhotoBitmap.width.toFloat() / partnerPhotoBitmap.height.toFloat()
+                    val currentPhoto = partnerPhotoBitmap
+                    if (currentPhoto != null) {
+                        val photoAspectRatio = remember(currentPhoto) {
+                            if (currentPhoto.height > 0) {
+                                currentPhoto.width.toFloat() / currentPhoto.height.toFloat()
                             } else 1f
                         }
 
@@ -553,7 +556,7 @@ fun DrawingMainScreen(
                                 .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            val containerAspect = maxWidth / maxHeight
+                            val containerAspect = if (maxHeight > 0.dp) maxWidth / maxHeight else 1f
                             val imageModifier = if (containerAspect > photoAspectRatio) {
                                 Modifier
                                     .fillMaxHeight()
@@ -570,7 +573,7 @@ fun DrawingMainScreen(
                                     .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
                             ) {
                                 Image(
-                                    bitmap = partnerPhotoBitmap,
+                                    bitmap = currentPhoto,
                                     contentDescription = "Full Screen Partner Photo",
                                     contentScale = ContentScale.FillBounds,
                                     modifier = Modifier.fillMaxSize()

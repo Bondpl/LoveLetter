@@ -30,28 +30,15 @@ class AuthViewModel : ViewModel() {
     private var pollingJob: Job? = null
 
     init {
-        if (sessionManager.isPaired() && sessionManager.getPairId().isNullOrBlank()) {
-            viewModelScope.launch {
-                try {
-                    authRepository.checkPairStatus()
-                } catch (_: Exception) {}
-            }
-        }
-
         viewModelScope.launch {
             authState.collect { state ->
                 when (state) {
                     is AuthState.WaitingForPartner -> startWaitingPolling()
                     is AuthState.Paired -> {
-                        stopPolling()
-                        if (sessionManager.getPairId().isNullOrBlank()) {
-                            try {
-                                authRepository.checkPairStatus()
-                            } catch (_: Exception) {}
-                        }
+                        stopWaitingPolling()
                     }
                     is AuthState.Unauthenticated -> {
-                        stopPolling()
+                        stopWaitingPolling()
                         sessionManager.consumeDisconnectReason()?.let { reason ->
                             _errorMessage.value = reason
                         }
@@ -95,15 +82,8 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun cancelWaiting() {
-        stopPolling()
-        viewModelScope.launch {
-            authRepository.leavePair()
-        }
-    }
-
     fun leavePair() {
-        stopPolling()
+        stopWaitingPolling()
         viewModelScope.launch {
             authRepository.leavePair()
         }
@@ -123,13 +103,13 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    private fun stopPolling() {
+    private fun stopWaitingPolling() {
         pollingJob?.cancel()
         pollingJob = null
     }
 
     override fun onCleared() {
         super.onCleared()
-        stopPolling()
+        stopWaitingPolling()
     }
 }

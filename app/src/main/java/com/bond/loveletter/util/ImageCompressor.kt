@@ -72,9 +72,13 @@ object ImageCompressor {
             val currentMaxDim = max(bitmap.width, bitmap.height)
             if (currentMaxDim > TARGET_MAX_DIMENSION) {
                 val scale = TARGET_MAX_DIMENSION.toFloat() / currentMaxDim.toFloat()
-                val newWidth = (bitmap.width * scale).toInt()
-                val newHeight = (bitmap.height * scale).toInt()
-                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+                val newWidth = max(1, (bitmap.width * scale).toInt())
+                val newHeight = max(1, (bitmap.height * scale).toInt())
+                val scaled = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+                if (scaled !== bitmap) {
+                    bitmap.recycle()
+                }
+                bitmap = scaled
             }
 
             // 7. Compress initial JPEG with high quality (85)
@@ -120,6 +124,13 @@ object ImageCompressor {
                 )
             }
 
+            if (currentBitmap !== bitmap && !bitmap.isRecycled) {
+                bitmap.recycle()
+            }
+            if (!currentBitmap.isRecycled) {
+                currentBitmap.recycle()
+            }
+
             return resultBytes
         } finally {
             try {
@@ -141,7 +152,7 @@ object ImageCompressor {
         try {
             val pfd = context.contentResolver.openFileDescriptor(uri, "r")
             if (pfd != null) {
-                return FileInputStream(pfd.fileDescriptor)
+                return android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd)
             }
         } catch (e: Exception) {
             Log.w("ImageCompressor", "openFileDescriptor failed: ${e.message}")
@@ -174,7 +185,11 @@ object ImageCompressor {
                 ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
                 else -> return bitmap
             }
-            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated !== bitmap) {
+                bitmap.recycle()
+            }
+            rotated
         } catch (e: Exception) {
             Log.w("ImageCompressor", "Failed to fix EXIF orientation", e)
             bitmap
