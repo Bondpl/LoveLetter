@@ -26,7 +26,7 @@ fun ImageBitmap.toPngByteArray(): ByteArray {
  * onto the solid background color of the drawing, preventing gallery apps from rendering
  * transparent corners as black borders.
  */
-fun cleanImageBytes(imageBytes: ByteArray): ByteArray {
+private fun cleanImageBytes(imageBytes: ByteArray): ByteArray {
     return try {
         val original = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
             ?: return imageBytes

@@ -51,8 +51,6 @@ class SessionManager private constructor(context: Context) {
         return SecureKeyStorage.decrypt(raw)
     }
 
-    fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
-
     fun getPairCode(): String? = prefs.getString(KEY_PAIR_CODE, null)
 
     fun getPairId(): String? = prefs.getString(KEY_PAIR_ID, null)
