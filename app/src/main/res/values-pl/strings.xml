@@ -3,6 +3,7 @@
     <string name="app_name">LoveLetter</string>
     <string name="btn_cancel">Anuluj</string>
     <string name="btn_close">Zamknij</string>
+    <string name="press_back_again_to_exit">Naciśnij wstecz ponownie, aby wyjść</string>
 
     <!-- Auth Screen -->
     <string name="auth_subtitle">Rysuj i wymieniaj zaszyfrowane wiadomości ze swoją drugą połówką na ekranie głównym.</string>
@@ -79,6 +80,7 @@
 
     <!-- Widget -->
     <string name="widget_waiting_on_letter">Czekam na wiadomość&#8230;</string>
+    <string name="widget_description">Wyświetla na ekranie głównym najnowszy rysunek lub wiadomość od Twojego partnera.</string>
     <string name="cd_widget_drawing">Rysunek LoveLetter</string>
 
     <!-- Notifications -->
@@ -92,6 +94,8 @@
     <string name="notif_view_once_photo_body">Twój partner przysłał zdjęcie do jednorazowego wyświetlenia!</string>
     <string name="notif_partner_left_title">LoveLetter</string>
     <string name="notif_partner_left_body">Twój partner opuścił parę</string>
+    <string name="notif_partner_joined_title">LoveLetter</string>
+    <string name="notif_partner_joined_body">Twój partner połączył się z parą!</string>
     <string name="notif_new_update_title">Nowa wiadomość</string>
     <string name="notif_new_update_body">Twój partner przesłał aktualizację!</string>
     <string name="notif_fallback_update_body">Masz nową wiadomość w LoveLetter!</string>

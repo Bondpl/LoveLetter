@@ -125,6 +125,28 @@ class PushNotificationService : FirebaseMessagingService() {
                 }
             }
 
+            "PAIR_CONNECTED" -> {
+                val incomingPairId = remoteMessage.data["pairId"]
+                val partnerPublicKey = remoteMessage.data["partnerPublicKey"]
+
+                if (!partnerPublicKey.isNullOrBlank()) {
+                    Log.d("PushService", "Received PAIR_CONNECTED for pairId=$incomingPairId")
+                    sessionManager.updatePartnerConnected(
+                        partnerPublicKey = partnerPublicKey,
+                        pairId = incomingPairId
+                    )
+
+                    val title = dataTitle ?: getString(R.string.notif_partner_joined_title)
+                    val body = dataBody ?: getString(R.string.notif_partner_joined_body)
+                    sendNotification(
+                        title = title,
+                        body = body,
+                        data = remoteMessage.data,
+                        notificationId = NOTIFICATION_CONNECT_ID
+                    )
+                }
+            }
+
             "PAIR_DISCONNECTED" -> {
                 val incomingPairId = remoteMessage.data["pairId"]
                 val currentPairId = sessionManager.getPairId()
@@ -306,5 +328,6 @@ class PushNotificationService : FirebaseMessagingService() {
         const val NOTIFICATION_DRAWING_ID = 1
         const val NOTIFICATION_DISCONNECT_ID = 2
         const val NOTIFICATION_PHOTO_ID = 3
+        const val NOTIFICATION_CONNECT_ID = 4
     }
 }

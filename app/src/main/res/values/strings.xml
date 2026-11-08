@@ -3,6 +3,7 @@
     <string name="app_name">LoveLetter</string>
     <string name="btn_cancel">Cancel</string>
     <string name="btn_close">Close</string>
+    <string name="press_back_again_to_exit">Press back again to exit</string>
 
     <!-- Auth Screen -->
     <string name="auth_subtitle">Draw and exchange encrypted love letters with your partner on your home screen.</string>
@@ -79,6 +80,7 @@
 
     <!-- Widget -->
     <string name="widget_waiting_on_letter">Waiting on a letter&#8230;</string>
+    <string name="widget_description">Displays the latest drawing or letter from your partner on your home screen.</string>
     <string name="cd_widget_drawing">Love Letter Drawing</string>
 
     <!-- Notifications -->
@@ -92,6 +94,8 @@
     <string name="notif_view_once_photo_body">Your partner sent you a view-once photo!</string>
     <string name="notif_partner_left_title">LoveLetter</string>
     <string name="notif_partner_left_body">Your partner has left the pair</string>
+    <string name="notif_partner_joined_title">LoveLetter</string>
+    <string name="notif_partner_joined_body">Your partner has joined the pair!</string>
     <string name="notif_new_update_title">New Update</string>
     <string name="notif_new_update_body">Your partner sent an update!</string>
     <string name="notif_fallback_update_body">You have a new update!</string>

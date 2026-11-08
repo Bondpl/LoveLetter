@@ -9,12 +9,9 @@ import com.bond.loveletter.data.storage.AuthState
 import com.bond.loveletter.data.storage.SessionManager
 import com.bond.loveletter.di.NetworkModule
 import com.bond.loveletter.util.toUserFriendlyMessage
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
@@ -29,21 +26,12 @@ class AuthViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    private var pollingJob: Job? = null
-
     init {
         viewModelScope.launch {
             authState.collect { state ->
-                when (state) {
-                    is AuthState.WaitingForPartner -> startWaitingPolling()
-                    is AuthState.Paired -> {
-                        stopWaitingPolling()
-                    }
-                    is AuthState.Unauthenticated -> {
-                        stopWaitingPolling()
-                        sessionManager.consumeDisconnectReason()?.let { reason ->
-                            _errorMessage.value = reason
-                        }
+                if (state is AuthState.Unauthenticated) {
+                    sessionManager.consumeDisconnectReason()?.let { reason ->
+                        _errorMessage.value = reason
                     }
                 }
             }
@@ -90,33 +78,8 @@ class AuthViewModel : ViewModel() {
     }
 
     fun leavePair() {
-        stopWaitingPolling()
         viewModelScope.launch {
             authRepository.leavePair()
         }
-    }
-
-    private fun startWaitingPolling() {
-        if (pollingJob?.isActive == true) return
-        pollingJob = viewModelScope.launch {
-            while (isActive) {
-                delay(3000)
-                try {
-                    authRepository.checkPairStatus()
-                } catch (_: Exception) {
-                    // Suppress polling network errors
-                }
-            }
-        }
-    }
-
-    private fun stopWaitingPolling() {
-        pollingJob?.cancel()
-        pollingJob = null
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        stopWaitingPolling()
     }
 }

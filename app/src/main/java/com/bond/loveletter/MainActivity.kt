@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -226,6 +227,19 @@ fun DrawingMainScreen(
     val graphicsLayer = rememberGraphicsLayer()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    val exitToastMessage = stringResource(R.string.press_back_again_to_exit)
+
+    BackHandler(enabled = true) {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackPressTime < 2000L) {
+            (context as? ComponentActivity)?.finish()
+        } else {
+            lastBackPressTime = currentTime
+            Toast.makeText(context, exitToastMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     var showDisconnectDialog by remember { mutableStateOf(false) }
 
