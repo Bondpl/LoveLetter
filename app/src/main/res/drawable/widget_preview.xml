@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- Rounded Background Card -->
+    <path
+        android:fillColor="#FFF7F9"
+        android:strokeColor="#FFD1DC"
+        android:strokeWidth="2"
+        android:pathData="M32,12 H168 A20,20 0 0 1 188,32 V168 A20,20 0 0 1 168,188 H32 A20,20 0 0 1 12,168 V32 A20,20 0 0 1 32,12 Z" />
+    <!-- Stylized Heart in Center -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M100,150 C70,120 45,95 45,65 C45,45 60,32 80,32 C91,32 97,38 100,45 C103,38 109,32 120,32 C140,32 155,45 155,65 C155,95 130,120 100,150 Z" />
+</vector>
